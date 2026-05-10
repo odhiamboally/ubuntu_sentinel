@@ -119,6 +119,10 @@ Before adding a new file or dependency, ask:
 - Premature plugin/MCP server implementation.
 - Deep generic repository layers.
 
+## Maturity Backlog Rule
+
+If an improvement is valuable but not required for the current vertical slice, put it in `MATURITY_BACKLOG.md` instead of expanding scope immediately. Promote it into `PLAN.md` only when it becomes necessary for the capstone demo, a judging criterion, or the next implementation slice.
+
 ## Required Before Final Demo
 
 - App builds.

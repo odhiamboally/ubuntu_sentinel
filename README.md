@@ -21,3 +21,4 @@ Voice & Accountability: tools that strengthen civic participation, hold power to
 - [PLAN.md](PLAN.md) - 3-day MVP build plan.
 - [PLAN_EXECUTION_STRATEGY.md](PLAN_EXECUTION_STRATEGY.md) - implementation strategy, sequencing, and human/Codex collaboration model.
 - [ARCHITECTURE_CHECK.md](ARCHITECTURE_CHECK.md) - architecture guardrails to prevent drift during the MVP build.
+- [MATURITY_BACKLOG.md](MATURITY_BACKLOG.md) - future completeness and production-readiness backlog.

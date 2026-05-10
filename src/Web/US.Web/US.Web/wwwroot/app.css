@@ -175,6 +175,35 @@ h1 {
     color: #526258;
 }
 
+.sync-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin: 0 0 1rem;
+    padding: .8rem;
+    border-radius: 6px;
+    background: #eef5ec;
+    color: #27392d;
+    font-weight: 800;
+}
+
+.sync-strip button {
+    border: 0;
+    border-radius: 5px;
+    padding: .45rem .75rem;
+    color: #fff;
+    background: #255d43;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.sync-strip button:disabled {
+    opacity: .55;
+    cursor: default;
+}
+
 .result-panel {
     margin-top: 1.5rem;
     border-color: #b9d8c2;

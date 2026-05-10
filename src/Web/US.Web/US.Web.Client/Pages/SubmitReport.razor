@@ -4,6 +4,7 @@
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
 @inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.OfflineReportQueue OfflineQueue
 
 <PageTitle>Submit Report | Ubuntu Sentinel</PageTitle>
 
@@ -69,6 +70,13 @@
         </EditForm>
 
         <aside class="context-panel">
+            <div class="sync-strip">
+                <span>@_pendingCount pending offline</span>
+                <button type="button" @onclick="SyncPendingAsync" disabled="@(_isSyncing || _pendingCount == 0)">
+                    @(_isSyncing ? "Syncing..." : "Sync")
+                </button>
+            </div>
+
             <h2>Region context</h2>
             @if (CurrentRegion is null)
             {
@@ -99,6 +107,13 @@
         </section>
     }
 
+    @if (!string.IsNullOrWhiteSpace(_syncMessage))
+    {
+        <section class="result-panel">
+            @_syncMessage
+        </section>
+    }
+
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <section class="error-panel">
@@ -118,6 +133,9 @@
     private IReadOnlyList<RegionProfileDto> _regions = [];
     private ReportDto? _submittedReport;
     private bool _isSubmitting;
+    private bool _isSyncing;
+    private int _pendingCount;
+    private string? _syncMessage;
     private string? _errorMessage;
 
     private RegionProfileDto? CurrentRegion =>
@@ -129,6 +147,7 @@
     protected override async Task OnInitializedAsync()
     {
         _regions = await ApiClient.GetRegionsAsync();
+        _pendingCount = await OfflineQueue.GetPendingCountAsync();
         var defaultRegion = _regions.FirstOrDefault(region => region.Code == _model.RegionCode) ?? _regions.FirstOrDefault();
 
         if (defaultRegion is not null)
@@ -148,19 +167,43 @@
         _isSubmitting = true;
         _errorMessage = null;
         _submittedReport = null;
+        _syncMessage = null;
 
         try
         {
             _submittedReport = await ApiClient.SubmitReportAsync(_model);
             _model = _model with { Description = string.Empty, LocationName = string.Empty };
         }
-        catch (Exception ex)
+        catch
         {
-            _errorMessage = $"Could not submit the report yet. Offline queue support is next; for now, confirm the API is running. Details: {ex.Message}";
+            await OfflineQueue.EnqueueAsync(_model);
+            _pendingCount = await OfflineQueue.GetPendingCountAsync();
+            _syncMessage = "No connection to the API right now. The report was saved locally and can be synced later.";
+            _model = _model with { Description = string.Empty, LocationName = string.Empty };
         }
         finally
         {
             _isSubmitting = false;
+        }
+    }
+
+    private async Task SyncPendingAsync()
+    {
+        _isSyncing = true;
+        _errorMessage = null;
+        _syncMessage = null;
+
+        try
+        {
+            var result = await OfflineQueue.SyncAsync();
+            _pendingCount = await OfflineQueue.GetPendingCountAsync();
+            _syncMessage = result.Remaining == 0
+                ? $"Synced {result.Synced} pending report(s)."
+                : $"Synced {result.Synced} of {result.Attempted}. {result.Remaining} still pending.";
+        }
+        finally
+        {
+            _isSyncing = false;
         }
     }
 
