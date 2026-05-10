@@ -52,6 +52,22 @@ public static class ReportEndpoints
             return Results.Ok(report);
         });
 
+        group.MapDelete("/{id:guid}", async (
+            Guid id,
+            IReportStore store,
+            IHubContext<ReportHub> hubContext,
+            CancellationToken cancellationToken) =>
+        {
+            var deleted = await store.DeleteAsync(id, cancellationToken);
+            if (!deleted)
+            {
+                return Results.NotFound();
+            }
+
+            await hubContext.Clients.All.SendAsync("ReportDeleted", id, cancellationToken);
+            return Results.NoContent();
+        });
+
         return endpoints;
     }
 }

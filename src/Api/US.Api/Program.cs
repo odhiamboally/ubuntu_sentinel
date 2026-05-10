@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using US.Api.Features.Accountability;
 using US.Api.Features.Regions;
 using US.Api.Features.Reports;
@@ -8,6 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
@@ -39,6 +44,18 @@ app.UseCors("BlazorClient");
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/", () => Results.Ok(new
+{
+    name = "Ubuntu Sentinel API",
+    status = "running",
+    endpoints = new[]
+    {
+        "/api/regions",
+        "/api/reports",
+        "/api/reports/{id}/pipeline",
+        "/hubs/reports"
+    }
+}));
 app.MapReportEndpoints();
 app.MapRegionEndpoints();
 app.MapAccountabilityEndpoints();

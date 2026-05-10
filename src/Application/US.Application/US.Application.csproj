@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Domain\US.Domain\US.Domain.csproj" />
+    <ProjectReference Include="..\..\SharedKernel\US.SharedKernel\US.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

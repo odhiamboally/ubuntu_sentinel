@@ -1,9 +1,13 @@
 @page "/validate"
-@rendermode InteractiveWebAssembly
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
+@using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <PageTitle>@T("Validate.Title") | Ubuntu Sentinel</PageTitle>
 
@@ -15,22 +19,26 @@
             <p class="lede">@T("Validate.Lede")</p>
         </div>
         <div class="page-controls">
-            <label>
-                @T("Common.Language")
-                <select @bind="_language">
-                    <option value="en">English</option>
-                    <option value="fr">French</option>
-                </select>
-            </label>
+            <MudSelect T="string" @bind-Value="_language" Label="@T("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="language-select">
+                <MudSelectItem Value="@("en")">English</MudSelectItem>
+                <MudSelectItem Value="@("fr")">French</MudSelectItem>
+            </MudSelect>
         </div>
     </section>
 
-    <section class="validation-toolbar">
-        <button type="button" @onclick="LoadReportsAsync" disabled="@_isLoading">@(_isLoading ? T("Common.Refreshing") : T("Common.Refresh"))</button>
-        <span>@PendingReports.Count @T("Validate.Pending")</span>
+    <section class="safety-note">
+        <strong>@T("Validate.SafetyTitle")</strong>
+        @T("Validate.SafetyBody")
     </section>
 
-    <section class="report-list">
+    <section class="validation-toolbar">
+        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadReportsAsync" Disabled="@_isLoading">
+            @(_isLoading ? T("Common.Refreshing") : T("Common.Refresh"))
+        </MudButton>
+        <span>@WorkQueueReports.Count @T("Validate.WorkQueue")</span>
+    </section>
+
+    <section class="table-surface">
         @if (_isLoading)
         {
             <article class="empty-state">
@@ -38,7 +46,7 @@
                 <p>@T("Validate.LoadingBody")</p>
             </article>
         }
-        else if (PendingReports.Count == 0)
+        else if (WorkQueueReports.Count == 0)
         {
             <article class="empty-state">
                 <h2>@T("Validate.EmptyTitle")</h2>
@@ -47,60 +55,40 @@
         }
         else
         {
-            @foreach (var report in PendingReports)
-            {
-                <article class="validation-card">
-                    <div class="validation-main">
-                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @Text.IssueType(_language, report.IssueType) · @report.Urgency</p>
-                        <h2>@report.Location.Name</h2>
-                        <p>@report.Description</p>
-                        <div class="validation-tags">
-                            @if (report.Actors.WomenLed)
-                            {
-                                <span>Women-led</span>
-                            }
-                            @if (report.Actors.YouthLed)
-                            {
-                                <span>Youth-led</span>
-                            }
-                            @if (report.IsSensitive)
-                            {
-                                <span>Sensitive</span>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="validation-actions">
-                        <label>
-                            @T("Validate.Notes")
-                            <textarea value="@GetNotes(report.Id)" @oninput="eventArgs => SetNotes(report.Id, eventArgs.Value?.ToString())" rows="4" placeholder="@T("Validate.NotesPlaceholder")"></textarea>
-                        </label>
-                        <div class="button-row">
-                            <button type="button" class="approve" @onclick="() => DecideAsync(report.Id, ValidationDecision.Approve)">@T("Validate.Approve")</button>
-                            <button type="button" class="follow-up" @onclick="() => DecideAsync(report.Id, ValidationDecision.NeedsFollowUp)">@T("Validate.FollowUp")</button>
-                            <button type="button" class="reject" @onclick="() => DecideAsync(report.Id, ValidationDecision.Reject)">@T("Validate.Reject")</button>
-                        </div>
-                    </div>
-                </article>
-            }
+            <MudTable T="ReportDto" Items="WorkQueueReports" Dense="true" Hover="true" Elevation="0" Class="review-table">
+                <HeaderContent>
+                    <MudTh>@T("Common.Region")</MudTh>
+                    <MudTh>@T("Common.Location")</MudTh>
+                    <MudTh>@T("Common.Urgency")</MudTh>
+                    <MudTh>@T("Submit.WhatHappened")</MudTh>
+                    <MudTh Class="actions-column">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@T("Common.Region")">@RegionLabel(context.RegionCode)</MudTd>
+                    <MudTd DataLabel="@T("Common.Location")">@context.Location.Name</MudTd>
+                    <MudTd DataLabel="@T("Common.Urgency")">
+                        <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(context.Urgency)" Variant="Variant.Filled">@Text.Urgency(_language, context.Urgency)</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="@T("Submit.WhatHappened")">
+                        <span class="table-description">@Preview(context.Description)</span>
+                    </MudTd>
+                    <MudTd DataLabel="Actions" Class="actions-column">
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => OpenReviewAsync(context))">View</MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
     </section>
-
-    @if (!string.IsNullOrWhiteSpace(_message))
-    {
-        <section class="result-panel">@_message</section>
-    }
 </main>
 
 @code {
     private readonly Dictionary<Guid, string?> _notes = [];
     private IReadOnlyList<ReportDto> _reports = [];
     private bool _isLoading;
-    private string? _message;
     private string _language = "en";
 
-    private List<ReportDto> PendingReports => _reports
-        .Where(report => report.Status == ReportStatus.PendingValidation)
+    private List<ReportDto> WorkQueueReports => _reports
+        .Where(report => report.Status is ReportStatus.PendingValidation or ReportStatus.NeedsFollowUp)
         .OrderByDescending(report => report.SubmittedAt)
         .ToList();
 
@@ -112,7 +100,6 @@
     private async Task LoadReportsAsync()
     {
         _isLoading = true;
-        _message = null;
 
         try
         {
@@ -128,31 +115,111 @@
         }
     }
 
-    private string? GetNotes(Guid reportId)
+    private async Task OpenReviewAsync(ReportDto report)
     {
-        _notes.TryAdd(reportId, null);
-        return _notes[reportId];
-    }
-
-    private void SetNotes(Guid reportId, string? value)
-    {
-        _notes[reportId] = value;
-    }
-
-    private async Task DecideAsync(Guid reportId, ValidationDecision decision)
-    {
-        var updated = await ApiClient.ValidateReportAsync(reportId, new ValidateReportRequest
+        var parameters = new DialogParameters<ValidationReviewDialog>
         {
-            Decision = decision,
-            Notes = _notes.GetValueOrDefault(reportId)
-        });
+            { dialog => dialog.Report, report },
+            { dialog => dialog.Language, _language },
+            { dialog => dialog.InitialNotes, _notes.GetValueOrDefault(report.Id) }
+        };
 
-        _reports = _reports
-            .Select(report => report.Id == updated.Id ? updated : report)
-            .ToList();
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true
+        };
 
-        _message = Text.Format(_language, "Validate.Marked", updated.Id, updated.Status);
+        var dialog = await DialogService.ShowAsync<ValidationReviewDialog>(T("Validate.Eyebrow"), parameters, options);
+        var result = await dialog.Result;
+        if (result is not { Canceled: false, Data: ValidationReviewDialog.ValidationReviewResult review })
+        {
+            return;
+        }
+
+        await DecideAsync(report.Id, review);
+    }
+
+    private async Task DecideAsync(Guid reportId, ValidationReviewDialog.ValidationReviewResult review)
+    {
+        try
+        {
+            var updated = await ApiClient.ValidateReportAsync(reportId, new ValidateReportRequest
+            {
+                Decision = review.Decision,
+                Notes = BuildValidationNotes(review)
+            });
+
+            _reports = _reports
+                .Select(report => report.Id == updated.Id ? updated : report)
+                .ToList();
+
+            var message = Text.Format(_language, "Validate.Marked", updated.Id, Text.Status(_language, updated.Status));
+            Snackbar.Add(message, Severity.Success);
+            await ShowFeedbackAsync(T("Validate.ActionCompleteTitle"), T("Validate.ActionCompleteBody"), Icons.Material.Filled.CheckCircle, Color.Success);
+        }
+        catch
+        {
+            var message = T("Validate.ActionFailed");
+            Snackbar.Add(message, Severity.Error);
+            await ShowFeedbackAsync(T("Common.Error"), message, Icons.Material.Filled.Error, Color.Error);
+        }
     }
 
     private string T(string key) => Text.Text(_language, key);
+
+    private static string BuildValidationNotes(ValidationReviewDialog.ValidationReviewResult review)
+    {
+        var checklistSummary =
+            $"Checks: consent={(review.ConsentConfirmed ? "yes" : "no")}; location={(review.LocationChecked ? "yes" : "no")}; evidence={(review.EvidenceChecked ? "yes" : "no")}; safety={(review.SafetyChecked ? "yes" : "no")}.";
+
+        return string.IsNullOrWhiteSpace(review.Notes) ? checklistSummary : $"{review.Notes.Trim()}\n{checklistSummary}";
+    }
+
+    private static string RegionLabel(string regionCode) => regionCode switch
+    {
+        "drc" => "Eastern DRC",
+        "sahel" => "Sahel",
+        "sudan" => "Sudan",
+        "mozambique" => "Mozambique",
+        _ => regionCode.ToUpperInvariant()
+    };
+
+    private static string Preview(string value)
+    {
+        const int maxLength = 170;
+        return value.Length <= maxLength ? value : $"{value[..maxLength]}...";
+    }
+
+    private static Color UrgencyColor(UrgencyLevel urgency) => urgency switch
+    {
+        UrgencyLevel.Critical => Color.Error,
+        UrgencyLevel.High => Color.Warning,
+        UrgencyLevel.Low => Color.Success,
+        _ => Color.Info
+    };
+
+    private async Task ShowFeedbackAsync(string title, string message, string icon, Color iconColor)
+    {
+        var parameters = new DialogParameters<ActionFeedbackDialog>
+        {
+            { dialog => dialog.Title, title },
+            { dialog => dialog.Message, message },
+            { dialog => dialog.Icon, icon },
+            { dialog => dialog.IconColor, iconColor },
+            { dialog => dialog.OkText, T("Common.Ok") }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            CloseButton = false
+        };
+
+        var dialog = await DialogService.ShowAsync<ActionFeedbackDialog>(string.Empty, parameters, options);
+        await dialog.Result;
+    }
+
 }

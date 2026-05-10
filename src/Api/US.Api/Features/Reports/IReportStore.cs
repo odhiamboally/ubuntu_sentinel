@@ -9,4 +9,5 @@ public interface IReportStore
     Task<IReadOnlyList<ReportDto>> GetAllAsync(CancellationToken cancellationToken);
     Task<ReportDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<ReportDto?> UpdateValidationAsync(Guid id, ValidationDecision decision, string? notes, CancellationToken cancellationToken);
+    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

@@ -1,11 +1,15 @@
 @page "/submit"
-@rendermode InteractiveWebAssembly
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
 @using US.SharedKernel.Contracts.Regions
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
+@using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.OfflineReportQueue OfflineQueue
 @inject Services.UiTextService Text
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 
@@ -18,67 +22,72 @@
         <p class="lede">@T("Submit.Lede")</p>
     </section>
 
+    <section class="safety-note">
+        <strong>@T("Submit.SafetyTitle")</strong>
+        @T("Submit.SafetyBody")
+    </section>
+
     <section class="workspace-grid">
-        <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="report-form">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-
-            <label>
-                @T("Common.Region")
-                <InputSelect @bind-Value="_model.RegionCode">
-                    @foreach (var region in _regions)
+        <EditForm Model="_model" OnSubmit="SubmitAsync" class="report-form">
+            @if (_validationErrors.Count > 0)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="full-span">
+                    @foreach (var error in _validationErrors)
                     {
-                        <option value="@region.Code">@region.Name</option>
+                        <p>@error</p>
                     }
-                </InputSelect>
-            </label>
+                </MudAlert>
+            }
 
-            <label>
-                @T("Common.Language")
-                <InputSelect @bind-Value="_model.LanguageCode">
-                    @foreach (var language in CurrentLanguages)
-                    {
-                        <option value="@language.Code">@language.Name</option>
-                    }
-                </InputSelect>
-            </label>
+            <MudSelect T="string" Value="_model.RegionCode" ValueChanged="OnRegionChanged" Label="@RequiredLabel("Common.Region")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined">
+                @foreach (var region in _regions)
+                {
+                    <MudSelectItem Value="@region.Code">@region.Name</MudSelectItem>
+                }
+            </MudSelect>
 
-            <label>
-                @T("Common.Location")
-                <InputText @bind-Value="_model.LocationName" placeholder="@T("Submit.LocationPlaceholder")" />
-            </label>
+            <MudSelect T="string" Value="_model.LanguageCode" ValueChanged="OnLanguageChanged" Label="@RequiredLabel("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined">
+                @foreach (var language in CurrentLanguages)
+                {
+                    <MudSelectItem Value="@language.Code">@language.Name</MudSelectItem>
+                }
+            </MudSelect>
 
-            <label>
-                @T("Common.IssueType")
-                <InputSelect @bind-Value="_model.IssueTypeHint">
-                    @foreach (var issueType in Enum.GetValues<IssueType>())
-                    {
-                        <option value="@issueType">@Text.IssueType(_model.LanguageCode, issueType)</option>
-                    }
-                </InputSelect>
-            </label>
+            <MudTextField @bind-Value="_model.LocationName" Label="@RequiredLabel("Common.Location")" Placeholder="@T("Submit.LocationPlaceholder")" Margin="Margin.Dense" Variant="Variant.Outlined" />
 
-            <label class="full-span">
-                @T("Submit.WhatHappened")
-                <InputTextArea @bind-Value="_model.Description" rows="7" placeholder="@T("Submit.DescriptionPlaceholder")" />
-            </label>
+            <MudSelect T="IssueType?" @bind-Value="_model.IssueTypeHint" Label="@RequiredLabel("Common.IssueType")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined">
+                @foreach (var issueType in Enum.GetValues<IssueType>())
+                {
+                    <MudSelectItem T="IssueType?" Value="@issueType">@Text.IssueType(_model.LanguageCode, issueType)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_model.Description"
+                          Label="@RequiredLabel("Submit.WhatHappened")"
+                          Placeholder="@T("Submit.DescriptionPlaceholder")"
+                          Lines="6"
+                          Class="full-span"
+                          Margin="Margin.Dense"
+                          Variant="Variant.Outlined" />
 
             <div class="check-row full-span">
-                <label><InputCheckbox @bind-Value="_model.WomenLed" /> @T("Submit.WomenLed")</label>
-                <label><InputCheckbox @bind-Value="_model.YouthLed" /> @T("Submit.YouthLed")</label>
-                <label><InputCheckbox @bind-Value="_model.IsSensitive" /> @T("Submit.Sensitive")</label>
+                <MudCheckBox T="bool" @bind-Value="_model.WomenLed" Dense="true" Label="@T("Submit.WomenLed")" />
+                <MudCheckBox T="bool" @bind-Value="_model.YouthLed" Dense="true" Label="@T("Submit.YouthLed")" />
+                <MudCheckBox T="bool" @bind-Value="_model.IsSensitive" Dense="true" Label="@T("Submit.Sensitive")" />
             </div>
 
-            <button type="submit" disabled="@_isSubmitting">@(_isSubmitting ? T("Submit.Submitting") : T("Submit.Submit"))</button>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSubmitting" Class="full-span">
+                @(_isSubmitting ? T("Submit.Submitting") : T("Submit.Submit"))
+            </MudButton>
         </EditForm>
 
         <aside class="context-panel">
             <div class="sync-strip">
                 <span class="@(_isOnline ? "status-online" : "status-offline")">@(_isOnline ? T("Common.Online") : T("Common.Offline"))</span>
                 <span>@_pendingCount @T("Common.Pending")</span>
-                <button type="button" @onclick="SyncPendingAsync" disabled="@(_isSyncing || _pendingCount == 0)">
+                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="SyncPendingAsync" Disabled="@(_isSyncing || _pendingCount == 0)">
                     @(_isSyncing ? T("Common.Syncing") : T("Common.Sync"))
-                </button>
+                </MudButton>
             </div>
 
             <h2>@T("Submit.RegionContext")</h2>
@@ -89,34 +98,16 @@
             else
             {
                 <h3>@CurrentRegion.Name</h3>
-                <p>@CurrentRegion.Description</p>
+                <p>@RegionDescription(CurrentRegion.Code)</p>
                 <dl>
                     <dt>@T("Submit.RegionalBodies")</dt>
                     <dd>@string.Join(", ", CurrentRegion.RegionalBodies)</dd>
                     <dt>@T("Submit.EscalationPathways")</dt>
-                    <dd>@string.Join(" -> ", CurrentRegion.EscalationPathways)</dd>
+                    <dd>@RegionPathways(CurrentRegion.Code)</dd>
                 </dl>
             }
         </aside>
     </section>
-
-    @if (_submittedReport is not null)
-    {
-        <section class="result-panel">
-            <p class="eyebrow">@T("Submit.Submitted")</p>
-            <h2>@T("Submit.Queued")</h2>
-            <p><strong>ID:</strong> @_submittedReport.Id</p>
-            <p><strong>@T("Common.Status"):</strong> @_submittedReport.Status</p>
-            <p><strong>@T("Common.Urgency"):</strong> @_submittedReport.Urgency</p>
-        </section>
-    }
-
-    @if (!string.IsNullOrWhiteSpace(_syncMessage))
-    {
-        <section class="result-panel">
-            @_syncMessage
-        </section>
-    }
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
@@ -135,12 +126,11 @@
     };
 
     private IReadOnlyList<RegionProfileDto> _regions = [];
-    private ReportDto? _submittedReport;
+    private readonly List<string> _validationErrors = [];
     private bool _isSubmitting;
     private bool _isSyncing;
     private bool _isOnline = true;
     private int _pendingCount;
-    private string? _syncMessage;
     private string? _errorMessage;
     private IJSObjectReference? _connectivityModule;
     private IJSObjectReference? _connectivityRegistration;
@@ -186,22 +176,52 @@
 
     private async Task SubmitAsync()
     {
+        _validationErrors.Clear();
+        if (!ValidateForm())
+        {
+            var validationMessage = T("Submit.ValidationError");
+            Snackbar.Add(validationMessage, Severity.Error);
+            await ShowFeedbackAsync(T("Common.Error"), validationMessage, Icons.Material.Filled.Error, Color.Error, T("Common.Ok"));
+            return;
+        }
+
         _isSubmitting = true;
         _errorMessage = null;
-        _submittedReport = null;
-        _syncMessage = null;
 
         try
         {
-            _submittedReport = await ApiClient.SubmitReportAsync(_model);
+            await ApiClient.SubmitReportAsync(_model);
+            var languageCode = _model.LanguageCode;
+            var successMessage = T("Submit.SuccessDetail");
+            Snackbar.Add(T("Submit.Success"), Severity.Success);
             _model = _model with { Description = string.Empty, LocationName = string.Empty };
+            _isSubmitting = false;
+            StateHasChanged();
+            await Task.Yield();
+            await ShowFeedbackAsync(
+                Text.Text(languageCode, "Submit.SuccessTitle"),
+                successMessage,
+                Icons.Material.Filled.CheckCircle,
+                Color.Success,
+                Text.Text(languageCode, "Common.Ok"));
         }
         catch
         {
             await OfflineQueue.EnqueueAsync(_model);
             _pendingCount = await OfflineQueue.GetPendingCountAsync();
-            _syncMessage = T("Submit.SavedOffline");
+            var languageCode = _model.LanguageCode;
+            var offlineMessage = _isOnline ? T("Submit.SubmitFailed") : T("Submit.SavedOffline");
+            Snackbar.Add(offlineMessage, Severity.Warning);
             _model = _model with { Description = string.Empty, LocationName = string.Empty };
+            _isSubmitting = false;
+            StateHasChanged();
+            await Task.Yield();
+            await ShowFeedbackAsync(
+                Text.Text(languageCode, "Submit.OfflineTitle"),
+                offlineMessage,
+                Icons.Material.Filled.CloudDone,
+                Color.Warning,
+                Text.Text(languageCode, "Common.Ok"));
         }
         finally
         {
@@ -226,15 +246,16 @@
     {
         _isSyncing = true;
         _errorMessage = null;
-        _syncMessage = null;
 
         try
         {
             var result = await OfflineQueue.SyncAsync();
             _pendingCount = await OfflineQueue.GetPendingCountAsync();
-            _syncMessage = result.Remaining == 0
+            var syncMessage = result.Remaining == 0
                 ? Text.Format(_model.LanguageCode, "Submit.SyncedAll", result.Synced)
                 : Text.Format(_model.LanguageCode, "Submit.SyncedSome", result.Synced, result.Attempted, result.Remaining);
+            Snackbar.Add(syncMessage, result.Remaining == 0 ? Severity.Success : Severity.Warning);
+            await ShowFeedbackAsync(T("Submit.SyncTitle"), syncMessage, Icons.Material.Filled.Sync, Color.Success, T("Common.Ok"));
         }
         finally
         {
@@ -242,7 +263,82 @@
         }
     }
 
+    private void OnRegionChanged(string regionCode)
+    {
+        var region = _regions.FirstOrDefault(item => item.Code == regionCode);
+        var languageCode = region?.Languages.FirstOrDefault(language => language.IsDefault)?.Code
+            ?? region?.Languages.FirstOrDefault()?.Code
+            ?? _model.LanguageCode
+            ?? "en";
+
+        _model = _model with
+        {
+            RegionCode = regionCode,
+            LanguageCode = languageCode
+        };
+
+        _validationErrors.Clear();
+    }
+
+    private void OnLanguageChanged(string languageCode)
+    {
+        _model = _model with { LanguageCode = languageCode };
+        _validationErrors.Clear();
+    }
+
+    private bool ValidateForm()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Description))
+        {
+            _validationErrors.Add(T("Submit.DescriptionRequired"));
+        }
+        else if (string.IsNullOrWhiteSpace(_model.LocationName))
+        {
+            _validationErrors.Add(T("Submit.LocationRequired"));
+        }
+        else if (_model.Description.Trim().Length < 10)
+        {
+            _validationErrors.Add(T("Submit.DescriptionTooShort"));
+        }
+        else if (_model.Description.Length > 4_000)
+        {
+            _validationErrors.Add(T("Submit.DescriptionTooLong"));
+        }
+
+        return _validationErrors.Count == 0;
+    }
+
     private string T(string key) => Text.Text(_model.LanguageCode, key);
+
+    private string RequiredLabel(string key) => $"{T(key)} *";
+
+    private async Task ShowFeedbackAsync(string title, string message, string icon, Color iconColor, string okText)
+    {
+        var parameters = new DialogParameters<ActionFeedbackDialog>
+        {
+            { dialog => dialog.Title, title },
+            { dialog => dialog.Message, message },
+            { dialog => dialog.Icon, icon },
+            { dialog => dialog.IconColor, iconColor },
+            { dialog => dialog.OkText, okText }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            CloseButton = false
+        };
+
+        var dialog = await DialogService.ShowAsync<ActionFeedbackDialog>(string.Empty, parameters, options);
+        await dialog.Result;
+    }
+
+    private string RegionDescription(string regionCode) =>
+        Text.Text(_model.LanguageCode, $"Region.{regionCode}.Description");
+
+    private string RegionPathways(string regionCode) =>
+        Text.Text(_model.LanguageCode, $"Region.{regionCode}.Pathways");
 
     public async ValueTask DisposeAsync()
     {

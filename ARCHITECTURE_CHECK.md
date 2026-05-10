@@ -2,134 +2,137 @@
 
 ## Purpose
 
-This file keeps Ubuntu Sentinel from drifting into either under-structured demo code or over-engineered enterprise code. Use it before adding new folders, dependencies, services, or cross-cutting patterns.
+This file prevents drift while Ubuntu Sentinel pivots from a reporting MVP into a BaseTemplate-inspired, prize-ready product demo.
 
-## Intended MVP Structure
+## Target Structure
 
 ```text
-UbuntuSentinel.sln
+UbuntuSentinel.slnx
 src/
-  UbuntuSentinel.Api/
-    Features/
-    Infrastructure/
-    Program.cs
-  UbuntuSentinel.Web/
-    Pages/
-    Components/
-    Services/
-    wwwroot/
-  UbuntuSentinel.Shared/
-    Contracts/
-    Enums/
-    Localization/
+  Backend/
+    Api/US.Api
+    Application/US.Application
+    Domain/US.Domain
+    Infrastructure/US.Infrastructure
+    Persistence/US.Persistence
+  Frontend/
+    Web/US.Web
+    Web/US.Web.Client
+    Mobile/US.Mobile        # optional MAUI simulator
+  Shared/
+    US.SharedKernel
+tests/
+  US.Tests.Architecture
+  US.Tests.Unit
+  US.Tests.Integration
 docs/
 ```
 
-## Project Responsibilities
-
-### UbuntuSentinel.Shared
-
-Owns contracts that both API and Web need:
-
-- Request/response DTOs.
-- Public enums.
-- Region/localization models.
-- Validation status and report status types.
-
-Shared must not depend on API, Web, persistence, OpenAI, SignalR hubs, or browser APIs.
-
-### UbuntuSentinel.Api
-
-Owns server behavior:
-
-- Report submission and retrieval.
-- AI-assisted accountability pipeline.
-- Validation workflow.
-- Region profile loading.
-- Realtime notifications through SignalR.
-- Persistence abstraction and implementation.
-
-API may depend on Shared. API must not depend on Web.
-
-### UbuntuSentinel.Web
-
-Owns user experience:
-
-- Report submission UI.
-- Offline queue and sync UI.
-- Region/language selection.
-- Dashboard.
-- Validation screen.
-- Accountability brief display.
-
-Web may depend on Shared. Web should call API through typed services, not duplicate server logic.
-
-## Feature Folder Rule
-
-Prefer feature folders for MVP velocity:
-
-```text
-Features/
-  Reports/
-  Validation/
-  Accountability/
-  Dashboard/
-  Regions/
-```
-
-Each feature may contain its endpoint handlers/controllers, services, and small internal models. Move code to shared infrastructure only when at least two features genuinely need it.
+The current repository is being migrated toward this structure. Do not add new feature work that deepens the old flat structure unless it is a temporary bridge.
 
 ## Dependency Rules
 
-- `Shared` has no project dependencies.
-- `Api` references `Shared`.
-- `Web` references `Shared`.
-- `Web` talks to `Api` over HTTP/SignalR, not by referencing API internals.
-- AI provider code stays behind an interface.
-- Persistence stays behind a repository/service boundary.
-- Browser storage code stays in Web.
+```text
+Domain -> SharedKernel only
+Application -> Domain, SharedKernel
+Persistence -> Application, Domain, SharedKernel
+Infrastructure -> Application, Domain, SharedKernel
+Api -> Application, Infrastructure, Persistence, SharedKernel
+Web.Client -> SharedKernel only, plus HTTP/SignalR calls to Api
+Web Host -> Web.Client, SharedKernel
+Mobile -> SharedKernel only, plus HTTP calls to Api
+```
 
-## MVP Architecture Decisions
+No UI project may reference API internals.
 
-- Use a modular monolith.
-- Use Blazor for the judge-facing app.
-- Use SignalR for realtime dashboard updates.
-- Use browser storage for offline reports.
-- Use seeded/demo fallback for AI output when no OpenAI key is present.
-- Use simple persistence first; PostgreSQL can be added behind the same boundary if time allows.
-- Keep localization as resource/data-driven UI text and region profiles.
+## Domain Ownership
 
-## Architecture Drift Checks
+`US.Domain` owns:
 
-Before adding a new file or dependency, ask:
+- community report lifecycle rules,
+- intake channel vocabulary,
+- conflict/resilience zone model,
+- policy document vocabulary,
+- agent pipeline stage vocabulary,
+- role vocabulary.
 
-1. Does this support the demo path in `CAPSTONE_SPEC.md`?
-2. Does this belong in API, Web, or Shared?
-3. Is this duplicating logic already owned elsewhere?
-4. Is this adding production complexity that the 3-day MVP does not need?
-5. Can this be represented as seeded data, a small service, or a feature-local helper?
+## Application Ownership
 
-## Avoid For MVP
+`US.Application` owns:
 
-- Separate Domain/Application/Infrastructure projects unless the codebase grows enough to justify them.
-- Full CQRS/MediatR pipeline.
-- Full identity provider integration.
-- Real WhatsApp/USSD integrations.
-- Full vector database/RAG stack.
-- Premature plugin/MCP server implementation.
-- Deep generic repository layers.
+- report use cases,
+- validation use cases,
+- agent pipeline contracts,
+- policy comparison contracts,
+- PDF/brief generation contracts,
+- role-shaped query contracts.
 
-## Maturity Backlog Rule
+## Persistence Ownership
 
-If an improvement is valuable but not required for the current vertical slice, put it in `MATURITY_BACKLOG.md` instead of expanding scope immediately. Promote it into `PLAN.md` only when it becomes necessary for the capstone demo, a judging criterion, or the next implementation slice.
+`US.Persistence` owns:
 
-## Required Before Final Demo
+- EF Core contexts and entities,
+- PostgreSQL and pgvector-ready mappings,
+- seed data repositories,
+- demo persistence fallbacks.
 
-- App builds.
-- Submit report flow works.
-- Offline queue behavior is demonstrable.
-- Region/language selection is visible.
-- SignalR dashboard update is demonstrable.
-- AI pipeline produces visible structured output or deterministic fallback.
-- Human validation state is visible.
-- README explains architecture and Codex usage.
+## Infrastructure Ownership
+
+`US.Infrastructure` owns:
+
+- OpenAI/Microsoft.Extensions.AI adapters,
+- Africa's Talking adapters,
+- QuestPDF generation,
+- Redis/MassTransit adapters,
+- deterministic fallback implementations for demo reliability.
+
+## API Ownership
+
+`US.Api` owns:
+
+- endpoint mapping,
+- SignalR hubs,
+- dependency injection composition,
+- authentication/authorization composition for demo roles,
+- HTTP boundary contracts.
+
+## Frontend Ownership
+
+Frontend owns:
+
+- MudBlazor UI,
+- offline browser queue,
+- USSD simulator page,
+- pipeline visualization,
+- map visualization,
+- role-shaped navigation,
+- localized labels.
+
+## Demo-Day Architecture Decisions
+
+- PostgreSQL/pgvector is the target persistence/RAG design.
+- A deterministic seeded comparison fallback is allowed for demo reliability.
+- USSD must be demoable even if Africa's Talking is not connected.
+- AI output must always be marked draft until community validation.
+- Conflict zones and resilience zones are both first-class.
+- Role-gated views can be demo-role selectors before production IAM.
+
+## Phase 2 Only
+
+Do not build these in the 48-hour demo window:
+
+- Marten oral histories.
+- Full women peacebuilder registry.
+- Satellite imagery correlation.
+- Production IAM.
+- Full consent lifecycle UI.
+
+## Pre-Commit Check
+
+Before adding code, ask:
+
+1. Does it serve the revised demo spine?
+2. Does it belong in the correct layer?
+3. Does it preserve community validation and data sovereignty?
+4. Does it have a demo fallback if an external service is unavailable?
+5. Does it keep the solution buildable?

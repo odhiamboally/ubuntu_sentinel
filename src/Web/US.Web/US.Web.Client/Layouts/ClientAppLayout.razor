@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+
+<ClientMudProviderHost />
+
+<header class="topbar">
+    <nav class="topbar-left" aria-label="Primary">
+        <a href="/dashboard" class="brand">Ubuntu Sentinel</a>
+        <a href="/dashboard" class="topbar-link">Dashboard</a>
+        <div class="nav-dropdown">
+            <button type="button" class="topbar-link nav-dropdown-trigger" aria-haspopup="true">
+                Reports
+                <span aria-hidden="true">v</span>
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+                <a href="/reports" role="menuitem">All reports</a>
+                <a href="/submit" role="menuitem">Submit</a>
+                <a href="/validate" role="menuitem">Validate</a>
+            </div>
+        </div>
+    </nav>
+    <div class="topbar-right" aria-hidden="true"></div>
+</header>
+
+@Body

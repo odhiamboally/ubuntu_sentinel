@@ -1,16 +1,11 @@
 @page "/"
+@inject NavigationManager Navigation
 
 <PageTitle>Ubuntu Sentinel</PageTitle>
 
-<main class="page-shell">
-    <section class="hero-band">
-        <p class="eyebrow">Ubuntu Sentinel</p>
-        <h1>Community intelligence for accountable peace</h1>
-        <p class="lede">Turn raw community reports into structured, localized accountability evidence for human validation and responsible escalation.</p>
-        <p class="action-row">
-            <a class="primary-link" href="/submit">Submit a report</a>
-            <a class="secondary-link" href="/dashboard">View dashboard</a>
-            <a class="secondary-link" href="/validate">Validate reports</a>
-        </p>
-    </section>
-</main>
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/dashboard", replace: true);
+    }
+}

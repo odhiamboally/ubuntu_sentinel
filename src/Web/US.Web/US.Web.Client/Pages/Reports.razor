@@ -1,0 +1,280 @@
+@page "/reports"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
+@using Microsoft.AspNetCore.SignalR.Client
+@using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
+@using MudBlazor
+@inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.UiTextService Text
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@implements IAsyncDisposable
+
+<PageTitle>@T("Reports.Title") | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell">
+    <section class="hero-band dashboard-hero">
+        <div>
+            <p class="eyebrow">@T("Reports.Eyebrow")</p>
+            <h1>@T("Reports.Title")</h1>
+            <p class="lede">@T("Reports.Lede")</p>
+        </div>
+        <div class="page-controls">
+            <MudSelect T="string" @bind-Value="_language" Label="@T("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="language-select">
+                <MudSelectItem Value="@("en")">English</MudSelectItem>
+                <MudSelectItem Value="@("fr")">French</MudSelectItem>
+            </MudSelect>
+            <MudChip T="string" Size="Size.Small" Color="@ConnectionColor" Variant="Variant.Filled">@ConnectionLabel</MudChip>
+        </div>
+    </section>
+
+    <section class="table-surface">
+        @if (_reports.Count == 0)
+        {
+            <article class="empty-state">
+                <h2>@T("Reports.EmptyTitle")</h2>
+                <p>@T("Reports.EmptyBody")</p>
+            </article>
+        }
+        else
+        {
+            <MudTable T="ReportDto" Items="_reports" Dense="true" Hover="true" Elevation="0" Class="review-table">
+                <HeaderContent>
+                    <MudTh>@T("Common.Region")</MudTh>
+                    <MudTh>@T("Common.Location")</MudTh>
+                    <MudTh>@T("Common.Status")</MudTh>
+                    <MudTh>@T("Common.Urgency")</MudTh>
+                    <MudTh>@T("Submit.WhatHappened")</MudTh>
+                    <MudTh>@T("Common.Submitted")</MudTh>
+                    <MudTh Class="dashboard-actions-column">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="@T("Common.Region")">@RegionLabel(context.RegionCode)</MudTd>
+                    <MudTd DataLabel="@T("Common.Location")">@context.Location.Name</MudTd>
+                    <MudTd DataLabel="@T("Common.Status")">
+                        <MudChip T="string" Size="Size.Small" Color="@StatusColor(context.Status)" Variant="Variant.Filled">@Text.Status(_language, context.Status)</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="@T("Common.Urgency")">
+                        <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(context.Urgency)" Variant="Variant.Filled">@Text.Urgency(_language, context.Urgency)</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="@T("Submit.WhatHappened")">
+                        <span class="table-description">@PreviewReport(context)</span>
+                    </MudTd>
+                    <MudTd DataLabel="@T("Common.Submitted")">@context.SubmittedAt.LocalDateTime.ToString("g")</MudTd>
+                    <MudTd DataLabel="Actions" Class="dashboard-actions-column">
+                        <TableRowActions ViewTooltip="@T("Common.View")"
+                                         EditTooltip="@T("Common.Edit")"
+                                         DeleteTooltip="@T("Common.Delete")"
+                                         ExtraActions="@(new[] { BriefActionLabel(context) })"
+                                         OnView="@(() => ViewBrief(context.Id))"
+                                         OnEdit="@EditReportAsync"
+                                         OnDelete="@(() => DeleteReportAsync(context.Id))"
+                                         OnExtraAction="@((_) => ViewBrief(context.Id))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </section>
+</main>
+
+@code {
+    private readonly List<ReportDto> _reports = [];
+    private HubConnection? _hubConnection;
+    private string _language = "en";
+
+    private string ConnectionLabel => _hubConnection?.State switch
+    {
+        HubConnectionState.Connected => T("Dashboard.Live"),
+        HubConnectionState.Connecting or HubConnectionState.Reconnecting => T("Dashboard.Connecting"),
+        _ => T("Common.Offline")
+    };
+
+    private Color ConnectionColor => _hubConnection?.State == HubConnectionState.Connected
+        ? Color.Success
+        : Color.Warning;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reports.Clear();
+        _reports.AddRange(await ApiClient.GetReportsAsync());
+
+        var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "http://localhost:5138";
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri(new Uri(apiBaseUrl), "/hubs/reports"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<ReportDto>("ReportSubmitted", UpsertReport);
+        _hubConnection.On<ReportDto>("ReportValidated", UpsertReport);
+        _hubConnection.On<Guid>("ReportDeleted", RemoveReport);
+        _hubConnection.Reconnecting += _ => InvokeAsync(StateHasChanged);
+        _hubConnection.Reconnected += _ => InvokeAsync(StateHasChanged);
+        _hubConnection.Closed += _ => InvokeAsync(StateHasChanged);
+
+        await _hubConnection.StartAsync();
+    }
+
+    private void UpsertReport(ReportDto report)
+    {
+        var index = _reports.FindIndex(existing => existing.Id == report.Id);
+        if (index >= 0)
+        {
+            _reports[index] = report;
+        }
+        else
+        {
+            _reports.Insert(0, report);
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void RemoveReport(Guid reportId)
+    {
+        _reports.RemoveAll(report => report.Id == reportId);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static string PreviewReport(ReportDto report)
+    {
+        return report.IsSensitive
+            ? "Sensitive report. Details are hidden in shared listings until validator review confirms safe handling."
+            : Preview(report.Description);
+    }
+
+    private static string Preview(string value)
+    {
+        const int maxLength = 180;
+        return value.Length <= maxLength ? value : $"{value[..maxLength]}...";
+    }
+
+    private string T(string key) => Text.Text(_language, key);
+
+    private void ViewBrief(Guid reportId)
+    {
+        Navigation.NavigateTo($"/reports/{reportId}/brief");
+    }
+
+    private string BriefActionLabel(ReportDto report)
+    {
+        return report.Status == ReportStatus.Approved
+            ? T("Reports.GenerateBrief")
+            : T("Reports.GenerateDraftBrief");
+    }
+
+    private async Task EditReportAsync()
+    {
+        await ShowFeedbackAsync(T("Reports.EditPendingTitle"), T("Reports.EditPendingBody"), Icons.Material.Filled.Edit, Color.Info);
+    }
+
+    private async Task DeleteReportAsync(Guid reportId)
+    {
+        var confirmed = await ConfirmAsync(
+            T("Reports.DeleteConfirmTitle"),
+            T("Reports.DeleteConfirmBody"),
+            T("Common.Delete"),
+            T("Common.Cancel"));
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        try
+        {
+            await ApiClient.DeleteReportAsync(reportId);
+            RemoveReport(reportId);
+            Snackbar.Add(T("Reports.DeleteSuccess"), Severity.Success);
+            await ShowFeedbackAsync(T("Reports.DeleteSuccessTitle"), T("Reports.DeleteSuccess"), Icons.Material.Filled.Delete, Color.Success);
+        }
+        catch
+        {
+            var message = T("Reports.DeleteFailed");
+            Snackbar.Add(message, Severity.Error);
+            await ShowFeedbackAsync(T("Common.Error"), message, Icons.Material.Filled.Error, Color.Error);
+        }
+    }
+
+    private static string RegionLabel(string regionCode) => regionCode switch
+    {
+        "drc" => "Eastern DRC",
+        "sahel" => "Sahel",
+        "sudan" => "Sudan",
+        "mozambique" => "Mozambique",
+        _ => regionCode.ToUpperInvariant()
+    };
+
+    private static Color StatusColor(ReportStatus status) => status switch
+    {
+        ReportStatus.Approved => Color.Success,
+        ReportStatus.NeedsFollowUp => Color.Warning,
+        ReportStatus.Rejected => Color.Error,
+        _ => Color.Info
+    };
+
+    private static Color UrgencyColor(UrgencyLevel urgency) => urgency switch
+    {
+        UrgencyLevel.Critical => Color.Error,
+        UrgencyLevel.High => Color.Warning,
+        UrgencyLevel.Low => Color.Success,
+        _ => Color.Info
+    };
+
+    private async Task ShowFeedbackAsync(string title, string message, string icon, Color iconColor)
+    {
+        var parameters = new DialogParameters<ActionFeedbackDialog>
+        {
+            { dialog => dialog.Title, title },
+            { dialog => dialog.Message, message },
+            { dialog => dialog.Icon, icon },
+            { dialog => dialog.IconColor, iconColor },
+            { dialog => dialog.OkText, T("Common.Ok") }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            CloseButton = false
+        };
+
+        var dialog = await DialogService.ShowAsync<ActionFeedbackDialog>(string.Empty, parameters, options);
+        await dialog.Result;
+    }
+
+    private async Task<bool> ConfirmAsync(string title, string message, string confirmText, string cancelText)
+    {
+        var parameters = new DialogParameters<ConfirmActionDialog>
+        {
+            { dialog => dialog.Title, title },
+            { dialog => dialog.Message, message },
+            { dialog => dialog.ConfirmText, confirmText },
+            { dialog => dialog.CancelText, cancelText },
+            { dialog => dialog.Icon, Icons.Material.Filled.Warning },
+            { dialog => dialog.IconColor, Color.Warning },
+            { dialog => dialog.ConfirmColor, Color.Error }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            CloseButton = false
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmActionDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        return result is { Canceled: false, Data: true };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}

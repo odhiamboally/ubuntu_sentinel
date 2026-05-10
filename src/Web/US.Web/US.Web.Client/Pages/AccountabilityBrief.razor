@@ -1,15 +1,25 @@
 @page "/reports/{ReportId:guid}/brief"
-@rendermode InteractiveWebAssembly
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
 @using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
 @inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.UiTextService Text
 
 <PageTitle>Accountability Brief | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
+    <a class="secondary-link back-link" href="/reports">@Text.Text(_report?.LanguageCode ?? "en", "Common.BackToReports")</a>
+
     <section class="hero-band">
         <p class="eyebrow">AI-assisted accountability</p>
-        <h1>Generated accountability brief</h1>
-        <p class="lede">This output is a structured draft. It must be reviewed by community validators before any escalation.</p>
+        <h1>@BriefTitle</h1>
+        <p class="lede">@BriefLede</p>
+    </section>
+
+    <section class="safety-note @(_report?.Status == ReportStatus.Approved ? "validated-note" : null)">
+        <strong>@BriefSafetyTitle</strong>
+        @BriefSafetyBody
     </section>
 
     @if (_isLoading)
@@ -29,12 +39,16 @@
     {
         <section class="pipeline-grid">
             <article class="metric-card">
+                <span>Status</span>
+                <strong>@Text.Status(_report?.LanguageCode ?? "en", _report?.Status ?? ReportStatus.Submitted)</strong>
+            </article>
+            <article class="metric-card">
                 <span>Issue type</span>
-                <strong>@_result.IssueType</strong>
+                <strong>@Text.IssueType(_report?.LanguageCode ?? "en", _result.IssueType)</strong>
             </article>
             <article class="metric-card">
                 <span>Urgency</span>
-                <strong>@_result.Urgency</strong>
+                <strong>@Text.Urgency(_report?.LanguageCode ?? "en", _result.Urgency)</strong>
             </article>
             <article class="metric-card">
                 <span>Confidence</span>
@@ -89,7 +103,24 @@
     public Guid ReportId { get; set; }
 
     private ReportPipelineResultDto? _result;
+    private ReportDto? _report;
     private bool _isLoading = true;
+
+    private string BriefTitle => _report?.Status == ReportStatus.Approved
+        ? "Validation-backed accountability brief"
+        : "Draft accountability brief";
+
+    private string BriefLede => _report?.Status == ReportStatus.Approved
+        ? "This output has an approved report behind it, but still requires responsible partner review before escalation."
+        : "This output is an internal draft. Human validation is required before escalation.";
+
+    private string BriefSafetyTitle => _report?.Status == ReportStatus.Approved
+        ? "Validated report"
+        : "Draft/unvalidated output";
+
+    private string BriefSafetyBody => _report?.Status == ReportStatus.Approved
+        ? "The underlying report has passed human validation. Use this brief for responsible review, partner coordination, and escalation planning."
+        : "This brief is generated assistance. It is not a legal finding, verified evidence, or authorization to escalate without human validation and community safety review.";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -97,6 +128,7 @@
 
         try
         {
+            _report = await ApiClient.GetReportAsync(ReportId);
             _result = await ApiClient.GetPipelineResultAsync(ReportId);
         }
         finally

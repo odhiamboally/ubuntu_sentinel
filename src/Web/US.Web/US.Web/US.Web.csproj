@@ -11,6 +11,7 @@
     <ProjectReference Include="..\US.Web.Client\US.Web.Client.csproj" />
     <ProjectReference Include="..\..\..\SharedKernel\US.SharedKernel\US.SharedKernel.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.7" />
+    <PackageReference Include="MudBlazor" Version="7.15.0" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,155 @@
+@using MudBlazor
+@using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
+@inject Services.UiTextService Text
+
+<MudDialog Class="review-dialog">
+    <TitleContent>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h6">@Report.Location.Name</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@RegionLabel(Report.RegionCode) · @Text.IssueType(Language, Report.IssueType) · @Text.Urgency(Language, Report.Urgency)</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Common.Status")</MudText>
+                <MudChip T="string" Size="Size.Small" Color="@StatusColor(Report.Status)" Variant="Variant.Filled">@Text.Status(Language, Report.Status)</MudChip>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Common.Urgency")</MudText>
+                <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(Report.Urgency)" Variant="Variant.Filled">@Text.Urgency(Language, Report.Urgency)</MudChip>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Submit.WhatHappened")</MudText>
+                <MudPaper Class="review-description" Elevation="0">@DisplayDescription</MudPaper>
+            </MudItem>
+            <MudItem xs="12">
+                <MudText Typo="Typo.subtitle2">@T("Validate.Checklist")</MudText>
+                <MudGrid Spacing="1" Class="review-checks">
+                    <MudItem xs="12" sm="6">
+                        <MudCheckBox T="bool" @bind-Value="_consentConfirmed" Dense="true" Label="@T("Validate.ConsentCheck")" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudCheckBox T="bool" @bind-Value="_locationChecked" Dense="true" Label="@T("Validate.LocationCheck")" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudCheckBox T="bool" @bind-Value="_evidenceChecked" Dense="true" Label="@T("Validate.EvidenceCheck")" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudCheckBox T="bool" @bind-Value="_safetyChecked" Dense="true" Label="@T("Validate.SafetyCheck")" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_notes"
+                              Label="@T("Validate.Notes")"
+                              Placeholder="@T("Validate.NotesPlaceholder")"
+                              Lines="4"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Cancel">@T("Common.Cancel")</MudButton>
+        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" OnClick="ApproveAsync">@T("Validate.Approve")</MudButton>
+        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => CompleteAsync(ValidationDecision.NeedsFollowUp))">@T("Validate.FollowUp")</MudButton>
+        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" OnClick="@(() => CompleteAsync(ValidationDecision.Reject))">@T("Validate.Reject")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public ReportDto Report { get; set; } = default!;
+
+    [Parameter]
+    public string Language { get; set; } = "en";
+
+    [Parameter]
+    public string? InitialNotes { get; set; }
+
+    private bool _consentConfirmed;
+    private bool _locationChecked;
+    private bool _evidenceChecked;
+    private bool _safetyChecked;
+    private string? _notes;
+
+    private bool IsComplete => _consentConfirmed && _locationChecked && _evidenceChecked && _safetyChecked;
+
+    private string DisplayDescription => Report.IsSensitive
+        ? Text.Format(Language, "Validate.SensitiveDescription", Report.Description)
+        : Report.Description;
+
+    protected override void OnInitialized()
+    {
+        _notes = InitialNotes;
+    }
+
+    private async Task ApproveAsync()
+    {
+        if (!IsComplete)
+        {
+            return;
+        }
+
+        await CompleteAsync(ValidationDecision.Approve);
+    }
+
+    private Task CompleteAsync(ValidationDecision decision)
+    {
+        var result = new ValidationReviewResult(
+            decision,
+            _notes,
+            _consentConfirmed,
+            _locationChecked,
+            _evidenceChecked,
+            _safetyChecked);
+
+        MudDialog.Close(DialogResult.Ok(result));
+        return Task.CompletedTask;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private string T(string key) => Text.Text(Language, key);
+
+    private static string RegionLabel(string regionCode) => regionCode switch
+    {
+        "drc" => "Eastern DRC",
+        "sahel" => "Sahel",
+        "sudan" => "Sudan",
+        "mozambique" => "Mozambique",
+        _ => regionCode.ToUpperInvariant()
+    };
+
+    private static Color StatusColor(ReportStatus status) => status switch
+    {
+        ReportStatus.Approved => Color.Success,
+        ReportStatus.NeedsFollowUp => Color.Warning,
+        ReportStatus.Rejected => Color.Error,
+        _ => Color.Info
+    };
+
+    private static Color UrgencyColor(UrgencyLevel urgency) => urgency switch
+    {
+        UrgencyLevel.Critical => Color.Error,
+        UrgencyLevel.High => Color.Warning,
+        UrgencyLevel.Low => Color.Success,
+        _ => Color.Info
+    };
+
+    public sealed record ValidationReviewResult(
+        ValidationDecision Decision,
+        string? Notes,
+        bool ConsentConfirmed,
+        bool LocationChecked,
+        bool EvidenceChecked,
+        bool SafetyChecked);
+}

@@ -11,6 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Application\US.Application\US.Application.csproj" />
+    <ProjectReference Include="..\..\Domain\US.Domain\US.Domain.csproj" />
+    <ProjectReference Include="..\..\Persistence\US.Persistence\US.Persistence.csproj" />
     <ProjectReference Include="..\..\SharedKernel\US.SharedKernel\US.SharedKernel.csproj" />
   </ItemGroup>
 

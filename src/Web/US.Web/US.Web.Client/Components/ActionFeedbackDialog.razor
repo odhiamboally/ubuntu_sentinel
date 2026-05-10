@@ -1,0 +1,41 @@
+@using MudBlazor
+
+<MudDialog Class="feedback-dialog">
+    <TitleContent>
+        <div class="feedback-dialog-title">
+            <MudIcon Icon="@Icon" Color="@IconColor" Size="Size.Small" />
+            <span>@Title</span>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <p class="feedback-dialog-message">@Message</p>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="Close">@OkText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string OkText { get; set; } = "OK";
+
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.CheckCircle;
+
+    [Parameter]
+    public Color IconColor { get; set; } = Color.Success;
+
+    private void Close()
+    {
+        MudDialog.Close();
+    }
+}

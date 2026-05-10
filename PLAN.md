@@ -1,49 +1,105 @@
-# Ubuntu Sentinel MVP Plan
+# Ubuntu Sentinel Build Plan
 
 ## Goal
 
-Build a working 3-day proof-of-concept that demonstrates community reporting, localization, offline sync, realtime dashboard updates, AI-assisted accountability analysis, and human validation.
+Build Ubuntu Sentinel as a serious PeaceTech product demo: community intelligence infrastructure that helps conflict-affected communities submit, validate, compare, and escalate accountability evidence without losing control of their own data.
 
-## Day 1 - Foundation
+This is no longer a thin reporting MVP. The target is a prize-ready Andela x OpenAI Codex Accelerator showcase aligned with OSF's "shifting power to communities" mission.
 
-- [x] Create solution structure.
-- [x] Add API, Blazor Web, and Shared projects.
-- [x] Define shared contracts and enums.
-- [x] Implement report submission endpoint.
-- [x] Implement frontend report form.
-- [x] Add region profile seed data.
-- [x] Add localization foundation and initial language resources.
-- [x] Confirm the solution builds.
+## Track Positioning
 
-## Day 2 - Offline, Sync, Validation
+- Primary: Voice & Accountability.
+- Secondary: Peace & Community.
+- Resource justice: included through promise tracking, policy comparison, CDA/mining/service commitments, and reparative accountability briefs.
 
-- [x] Add browser-side offline queue.
-- [x] Add sync service and visible pending count.
-- [x] Add automatic sync when browser connectivity returns.
-- [x] Add SignalR hub for report updates.
-- [x] Add dashboard report list/map-ready view.
-- [x] Add validator workflow: approve, reject, needs follow-up.
-- [x] Add seeded/demo persistence if full database setup slows the build.
-- [ ] Manually verify the offline-to-online demo path.
+## Demo-Day Build List
 
-## Day 3 - AI Pipeline, Demo Polish, Docs
+- [ ] BaseTemplate-inspired solution structure:
+  - [x] `US.Domain`
+  - [x] `US.Application`
+  - [ ] `US.Infrastructure`
+  - [x] `US.Persistence`
+  - [x] `US.Api`
+  - [x] `US.Web` / `US.Web.Client`
+  - [ ] `US.Mobile` MAUI simulator if web/API spine is stable
+  - [ ] architecture tests
+- [ ] Multi-channel intake:
+  - [x] web submit flow
+  - [x] offline browser queue foundation
+  - [ ] USSD simulator
+  - [ ] Africa's Talking webhook-shaped endpoint
+  - [ ] SMS-shaped intake endpoint or simulator
+- [ ] Community data sovereignty:
+  - [ ] consent captured at intake
+  - [ ] original testimony preserved
+  - [ ] reporter status view
+  - [ ] withdrawal/cancel before validation
+- [ ] Policy/RAG promise tracking:
+  - [ ] seeded policy/CDA documents
+  - [ ] pgvector-ready abstraction
+  - [ ] deterministic semantic comparison fallback
+  - [ ] promise-delivery gap output
+- [ ] Four-agent Codex pipeline:
+  - [ ] evidence structuring
+  - [ ] policy RAG comparison
+  - [ ] safety and ethics review
+  - [ ] accountability brief generation
+  - [ ] visible pipeline page
+- [ ] Human validation:
+  - [x] approve/follow-up/reject workflow foundation
+  - [ ] consent/location/evidence/safety checks persisted
+  - [ ] community validator role view
+  - [ ] brief escalation blocked until validation
+- [ ] Dual-zone map:
+  - [ ] conflict zones
+  - [ ] resilience zones
+  - [ ] women-led/youth-led resilience signals
+  - [ ] region filters
+- [ ] Accountability brief:
+  - [x] markdown brief foundation
+  - [ ] QuestPDF generation
+  - [ ] JSON output for partner systems
+  - [ ] validation-backed vs draft state
+  - [ ] EN/FR output
+- [ ] Role-gated navigation:
+  - [ ] Reporter
+  - [ ] Community Validator
+  - [ ] Advocate/CSO
+  - [ ] OSF Partner demo view
+- [ ] Localization:
+  - [x] EN/FR UI foundation
+  - [ ] full EN/FR coverage on demo pages
+  - [ ] AR documented as next language unless time permits
+- [ ] Demo/readme:
+  - [ ] 5-minute judge script
+  - [ ] Codex usage explanation
+  - [ ] architecture diagram
+  - [ ] Phase 2 roadmap
 
-- [x] Implement AI pipeline contracts:
-  - [x] Validation Agent
-  - [x] Document Intelligence Agent
-  - [x] Reparative Justice Calculator
-  - [x] Advocacy Drafter
-- [ ] Add OpenAI-backed implementation with deterministic fallback.
-- [x] Add deterministic fallback pipeline output.
-- [x] Add accountability brief view/export-ready markdown.
-- [ ] Polish UI for judge-facing flow.
-- [ ] Add README usage, demo script, and Codex usage explanation.
-- [ ] Run final build and browser demo pass.
+## Explicit Phase 2
 
-## Demo Scenario
+Do not build these for the demo:
 
-Aisha, a youth leader in Eastern DRC, reports that a mining company promised a clean water well by March 2024 under a community agreement, but the site remains dry. Ubuntu Sentinel structures the report, detects the accountability gap, estimates reparative action, and generates a brief for validation before escalation.
+- Marten oral history registry.
+- Women peacebuilder registry as a full module.
+- Satellite imagery correlation.
+- Full consent lifecycle UI.
+- Production IAM/multi-tenant auth.
+
+Represent women-led peacebuilding through report flags, resilience zones, seeded examples, and demo narrative.
+
+## 48-Hour Execution Order
+
+1. Align solution structure and docs to the revised product.
+2. Move current report behavior behind application/domain/persistence boundaries.
+3. Add seeded policy documents and promise comparison service.
+4. Add USSD simulator and webhook-shaped intake.
+5. Add four-agent pipeline result and pipeline UI.
+6. Add dual-zone map.
+7. Upgrade validation checks and role-shaped navigation.
+8. Add QuestPDF or PDF-ready export fallback.
+9. Polish demo, docs, and browser run.
 
 ## Success Bar
 
-The app does not need to be production-ready. It must be coherent, working, and believable as a foundation worth pursuing.
+The demo must make judges feel that Ubuntu Sentinel is not an OSF-branded dashboard. It is community-owned intelligence infrastructure: offline-capable, multi-channel, human-validated, policy-aware, and able to show both harm and resilience.

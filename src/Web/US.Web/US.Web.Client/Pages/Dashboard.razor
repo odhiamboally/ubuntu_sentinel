@@ -1,11 +1,13 @@
 @page "/dashboard"
-@rendermode InteractiveWebAssembly
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
 @using Microsoft.AspNetCore.SignalR.Client
 @using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
+@using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
 @inject IConfiguration Configuration
-@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
 <PageTitle>@T("Dashboard.Title") | Ubuntu Sentinel</PageTitle>
@@ -18,14 +20,11 @@
             <p class="lede">@T("Dashboard.Lede")</p>
         </div>
         <div class="page-controls">
-            <label>
-                @T("Common.Language")
-                <select @bind="_language">
-                    <option value="en">English</option>
-                    <option value="fr">French</option>
-                </select>
-            </label>
-            <div class="connection-pill @ConnectionCss">@ConnectionLabel</div>
+            <MudSelect T="string" @bind-Value="_language" Label="@T("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="language-select">
+                <MudSelectItem Value="@("en")">English</MudSelectItem>
+                <MudSelectItem Value="@("fr")">French</MudSelectItem>
+            </MudSelect>
+            <MudChip T="string" Size="Size.Small" Color="@ConnectionColor" Variant="Variant.Filled">@ConnectionLabel</MudChip>
         </div>
     </section>
 
@@ -42,38 +41,14 @@
             <span>@T("Dashboard.HighCritical")</span>
             <strong>@_reports.Count(report => report.Urgency >= US.SharedKernel.Enums.UrgencyLevel.High)</strong>
         </article>
-    </section>
-
-    <section class="report-list">
-        @if (_reports.Count == 0)
-        {
-            <article class="empty-state">
-                <h2>@T("Dashboard.EmptyTitle")</h2>
-                <p>@T("Dashboard.EmptyBody")</p>
-            </article>
-        }
-        else
-        {
-            @foreach (var report in _reports)
-            {
-                <article class="report-card">
-                    <div>
-                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @Text.IssueType(_language, report.IssueType)</p>
-                        <h2>@report.Location.Name</h2>
-                        <p>@Preview(report.Description)</p>
-                        <a class="inline-action" href="@($"/reports/{report.Id}/brief")">@T("Dashboard.GenerateBrief")</a>
-                    </div>
-                    <dl>
-                        <dt>@T("Common.Status")</dt>
-                        <dd>@report.Status</dd>
-                        <dt>@T("Common.Urgency")</dt>
-                        <dd>@report.Urgency</dd>
-                        <dt>@T("Common.Submitted")</dt>
-                        <dd>@report.SubmittedAt.LocalDateTime.ToString("g")</dd>
-                    </dl>
-                </article>
-            }
-        }
+        <article class="metric-card">
+            <span>@T("Dashboard.FollowUp")</span>
+            <strong>@_reports.Count(report => report.Status == ReportStatus.NeedsFollowUp)</strong>
+        </article>
+        <article class="metric-card">
+            <span>@T("Dashboard.Approved")</span>
+            <strong>@_reports.Count(report => report.Status == ReportStatus.Approved)</strong>
+        </article>
     </section>
 </main>
 
@@ -89,9 +64,9 @@
         _ => T("Common.Offline")
     };
 
-    private string ConnectionCss => _hubConnection?.State == HubConnectionState.Connected
-        ? "connection-live"
-        : "connection-offline";
+    private Color ConnectionColor => _hubConnection?.State == HubConnectionState.Connected
+        ? Color.Success
+        : Color.Warning;
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,6 +81,7 @@
 
         _hubConnection.On<ReportDto>("ReportSubmitted", UpsertReport);
         _hubConnection.On<ReportDto>("ReportValidated", UpsertReport);
+        _hubConnection.On<Guid>("ReportDeleted", RemoveReport);
         _hubConnection.Reconnecting += _ => InvokeAsync(StateHasChanged);
         _hubConnection.Reconnected += _ => InvokeAsync(StateHasChanged);
         _hubConnection.Closed += _ => InvokeAsync(StateHasChanged);
@@ -128,10 +104,10 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
-    private static string Preview(string value)
+    private void RemoveReport(Guid reportId)
     {
-        const int maxLength = 180;
-        return value.Length <= maxLength ? value : $"{value[..maxLength]}...";
+        _reports.RemoveAll(report => report.Id == reportId);
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private string T(string key) => Text.Text(_language, key);

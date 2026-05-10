@@ -2,38 +2,50 @@
 
 ## Project
 
-Ubuntu Sentinel is a .NET/Blazor PeaceTech MVP for the Andela x OpenAI Codex Accelerator. The app converts raw community reports into structured accountability evidence for OSF-aligned peacebuilding workflows.
+Ubuntu Sentinel is a .NET 10 PeaceTech product for the Andela x OpenAI Codex Accelerator. It is positioned as community intelligence infrastructure for OSF-aligned transformative peace, not merely a reporting dashboard.
 
-## Build Priorities
+## Current Strategy
 
-- Working demo beats architectural completeness.
-- Keep the solution modular but not over-engineered.
-- Preserve human-in-the-loop validation; AI assists, humans decide.
-- Treat localization, low-bandwidth use, anonymity, and regional adaptability as first-class requirements.
+Build a prize-ready demo over the next 48 hours:
 
-## Stack
+- BaseTemplate-inspired clean architecture.
+- Multi-channel intake with USSD simulator and offline web/PWA queue.
+- Seeded policy/RAG promise tracking.
+- Four-agent Codex pipeline.
+- Community validation gate.
+- Dual conflict/resilience map.
+- Role-shaped Reporter, Validator, Advocate, and OSF Partner views.
+- Accountability brief with PDF-ready output.
 
-- .NET for API and Blazor frontend.
-- SignalR for realtime sync/dashboard updates.
-- Browser storage for offline report queueing.
-- PostgreSQL preferred for persistent server data; SQLite/in-memory fallback is acceptable for demo speed if documented.
-- OpenAI API for the AI-assisted pipeline, with deterministic fallback data for demo resilience.
+## Non-Negotiables
 
-## Style
+- AI assists; community validators decide.
+- Original community testimony must be preserved.
+- Consent and safety checks must be visible.
+- Conflict zones and resilience zones are both first-class.
+- External integrations need deterministic demo fallbacks.
+- EN/FR localization must cover the judge-facing flow.
 
-- Prefer feature folders over scattered layers for MVP velocity.
-- Use clear contracts in shared DTOs.
-- Keep UI text localizable.
-- Avoid speculative abstractions until there is real duplication.
+## Phase 2 Only
 
-## Testing
+Do not build during the demo sprint:
 
-- Run targeted builds/tests after each meaningful slice.
-- Verify the demo path manually in the browser.
-- If live AI or database dependencies are unavailable, provide seeded/demo fallbacks and document the limitation.
+- Marten oral histories.
+- Full women peacebuilder registry.
+- Satellite imagery correlation.
+- Production IAM.
 
-## Review
+## Engineering Rules
 
-- Report files changed, commands run, and remaining risks.
-- Do not revert user changes.
-- Keep changes scoped to the active task.
+- Keep the solution buildable after each major slice.
+- Prefer BaseTemplate structure and discipline.
+- Move behavior into `US.Domain`, `US.Application`, `US.Persistence`, and `US.Infrastructure` instead of expanding API feature code.
+- Web and Mobile must call API boundaries, not server internals.
+- Use MudBlazor for app UI controls where practical.
+- Keep docs in sync when strategy, architecture, or user-visible behavior changes.
+
+## Verification
+
+- Stop running API/Web before building if file locks occur.
+- Run `dotnet build UbuntuSentinel.slnx` after structural changes.
+- Browser-verify UI changes when the browser backend is available; otherwise inspect HTTP/logs and ask the user to refresh.

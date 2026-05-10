@@ -2,72 +2,67 @@
 
 ## Strategy
 
-Build thin vertical slices from UI to API instead of completing isolated layers first. Every major slice should leave the app more demonstrable than before.
+Build the real product spine, but keep every slice runnable. We are borrowing BaseTemplate's structure and discipline while avoiding a rewrite that leaves the demo broken.
 
-## Execution Principles
+## Guiding Principle
 
-- Start with the judge-facing path.
-- Keep scope narrow and visible.
-- Prefer seeded data and deterministic fallbacks where external services could break the demo.
-- Add abstractions only when they support the current MVP.
-- Make localization and region adaptability structural from the beginning, not a final decoration.
+Every implemented slice must improve the judge-facing story:
 
-## Slice Order
+Community intake -> agentic intelligence -> community validation -> policy gap -> accountable brief -> conflict/resilience visibility.
 
-1. Solution scaffold and shared contracts.
-2. Submit report flow.
-3. Region and localization support.
-4. Offline queue and sync.
-5. SignalR realtime dashboard.
-6. Validation workflow.
-7. AI-assisted accountability pipeline.
-8. Accountability brief view.
-9. README, demo script, and Codex usage notes.
+## Architecture First, Then Feature Migration
+
+1. Establish clean project boundaries.
+2. Keep current behavior working while moving logic into the right layer.
+3. Add adapters for real integrations with deterministic demo fallbacks.
+4. Promote only the pieces that serve the demo-day build list.
+
+## Layer Rules
+
+- `US.Domain`: entities, value objects, enums, core rules.
+- `US.Application`: use cases, interfaces, DTO mapping, pipeline contracts.
+- `US.Persistence`: EF Core/PostgreSQL/pgvector-ready data access and seeded demo stores.
+- `US.Infrastructure`: external services such as OpenAI, Africa's Talking, PDF, cache, messaging.
+- `US.Api`: endpoints, SignalR hubs, composition root.
+- `US.Web` / `US.Web.Client`: Blazor host and interactive UI.
+- `US.Mobile`: optional MAUI simulator that consumes the same API.
+- `US.SharedKernel`: stable contracts and primitives shared across boundaries.
+
+## Build Order
+
+1. Reports and case lifecycle.
+2. Intake channels: web, offline, USSD simulator.
+3. Policy/RAG comparison.
+4. Agent pipeline.
+5. Validation and roles.
+6. Map and resilience zones.
+7. Accountability brief and PDF.
+8. Demo polish.
+
+## External Dependency Rule
+
+Use real package boundaries where useful, but every external dependency must have a demo-safe fallback:
+
+- OpenAI unavailable -> deterministic agent outputs.
+- PostgreSQL/pgvector unavailable -> seeded in-memory comparison behind the same interface.
+- Africa's Talking unavailable -> USSD simulator and webhook-compatible endpoint.
+- QuestPDF blocked -> PDF-ready markdown/HTML export until package is stable.
 
 ## Human Input
 
-The human defines:
-
-- The OSF-aligned problem framing.
-- Track choice and ethical boundaries.
-- MVP scope and tradeoffs.
-- What counts as responsible use of AI.
-- Final acceptance of generated code and demo narrative.
+The human defines OSF framing, ethical constraints, demo priorities, and final acceptance.
 
 ## Codex Contribution
 
-Codex assists with:
-
-- Translating documents into implementation tasks.
-- Scaffolding the solution.
-- Implementing vertical slices.
-- Refactoring and debugging.
-- Creating docs, demo script, and review notes.
-- Checking consistency against the capstone brief.
-
-## Risk Controls
-
-- If PostgreSQL setup slows progress, use an in-memory or SQLite demo repository and keep the persistence boundary clear.
-- If OpenAI API access is unavailable, use deterministic sample pipeline output and document the fallback.
-- If map integration becomes costly, use a region-aware list/cards dashboard and leave map coordinates ready for future extension.
-- If localization breadth becomes too large, ship English plus one polished second language and document how more languages plug in.
+Codex implements structure, features, refactors, docs, bug fixes, and demo verification while keeping human validation and community data sovereignty explicit.
 
 ## Verification Loop
 
-After each slice:
+After each meaningful slice:
 
-1. Build the solution.
-2. Run targeted tests if present.
-3. Manually exercise the feature.
-4. Update docs if behavior changed.
-
-## Final Packaging
-
-The final repo should contain:
-
-- Working source code.
-- Clear README.
-- `AGENTS.md`.
-- `CAPSTONE_SPEC.md`.
-- Demo script.
-- Notes explaining Codex usage versus human decisions.
+1. Stop running API/Web processes.
+2. Build the solution.
+3. Run targeted tests if present.
+4. Start API/Web.
+5. Verify the browser demo path when UI changed.
+6. Update docs only when behavior or architecture changed.

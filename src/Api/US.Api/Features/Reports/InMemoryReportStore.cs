@@ -85,6 +85,11 @@ public sealed class InMemoryReportStore : IReportStore
         return Task.FromResult<ReportDto?>(updated);
     }
 
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(_reports.TryRemove(id, out _));
+    }
+
     private static UrgencyLevel InferUrgency(string description)
     {
         var normalized = description.ToLowerInvariant();
