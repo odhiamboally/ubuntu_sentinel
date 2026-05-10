@@ -34,7 +34,8 @@ a {
 
 .topbar nav a,
 .primary-link,
-.secondary-link {
+.secondary-link,
+.inline-action {
     font-weight: 700;
     text-decoration: none;
 }
@@ -63,6 +64,10 @@ a {
 .secondary-link {
     border: 1px solid #bdd0bf;
     color: #1f3b2c;
+}
+
+.inline-action {
+    color: #1f6f4a;
 }
 
 .page-shell {
@@ -280,6 +285,13 @@ h1 {
     margin-bottom: 1.5rem;
 }
 
+.pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
 .metric-card,
 .report-card,
 .empty-state {
@@ -335,6 +347,36 @@ h1 {
 
 .empty-state {
     padding: 1.25rem;
+}
+
+.brief-layout {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.brief-panel {
+    border: 1px solid #dde5dc;
+    border-radius: 8px;
+    background: #fff;
+    padding: 1.25rem;
+    box-shadow: 0 16px 45px rgba(16, 39, 27, .08);
+}
+
+.brief-panel h2 {
+    margin-top: 0;
+}
+
+.brief-panel pre {
+    overflow: auto;
+    max-height: 680px;
+    margin: 0;
+    border-radius: 6px;
+    padding: 1rem;
+    color: #f6fbf4;
+    background: #10271b;
+    white-space: pre-wrap;
 }
 
 .validation-toolbar {
@@ -430,9 +472,11 @@ h1 {
     .workspace-grid,
     .report-form,
     .dashboard-grid,
+    .pipeline-grid,
     .report-card,
     .dashboard-hero,
-    .validation-card {
+    .validation-card,
+    .brief-layout {
         grid-template-columns: 1fr;
     }
 

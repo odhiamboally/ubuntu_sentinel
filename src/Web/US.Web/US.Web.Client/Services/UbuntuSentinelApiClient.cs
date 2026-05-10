@@ -35,4 +35,10 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ReportDto>(cancellationToken)
             ?? throw new InvalidOperationException("The API returned an empty validation response.");
     }
+
+    public async Task<ReportPipelineResultDto> GetPipelineResultAsync(Guid reportId, CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetFromJsonAsync<ReportPipelineResultDto>($"/api/reports/{reportId}/pipeline", cancellationToken)
+            ?? throw new InvalidOperationException("The API returned an empty pipeline response.");
+    }
 }

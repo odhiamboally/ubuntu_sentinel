@@ -28,16 +28,17 @@ Build a working 3-day proof-of-concept that demonstrates community reporting, lo
 
 ## Day 3 - AI Pipeline, Demo Polish, Docs
 
-- Implement AI pipeline contracts:
-  - Validation Agent
-  - Document Intelligence Agent
-  - Reparative Justice Calculator
-  - Advocacy Drafter
-- Add OpenAI-backed implementation with deterministic fallback.
-- Add accountability brief view/export-ready markdown.
-- Polish UI for judge-facing flow.
-- Add README usage, demo script, and Codex usage explanation.
-- Run final build and browser demo pass.
+- [x] Implement AI pipeline contracts:
+  - [x] Validation Agent
+  - [x] Document Intelligence Agent
+  - [x] Reparative Justice Calculator
+  - [x] Advocacy Drafter
+- [ ] Add OpenAI-backed implementation with deterministic fallback.
+- [x] Add deterministic fallback pipeline output.
+- [x] Add accountability brief view/export-ready markdown.
+- [ ] Polish UI for judge-facing flow.
+- [ ] Add README usage, demo script, and Codex usage explanation.
+- [ ] Run final build and browser demo pass.
 
 ## Demo Scenario
 

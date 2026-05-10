@@ -1,0 +1,95 @@
+@page "/reports/{ReportId:guid}/brief"
+@rendermode InteractiveWebAssembly
+@using US.SharedKernel.Contracts.Reports
+@inject Services.UbuntuSentinelApiClient ApiClient
+
+<PageTitle>Accountability Brief | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell">
+    <section class="hero-band">
+        <p class="eyebrow">AI-assisted accountability</p>
+        <h1>Generated accountability brief</h1>
+        <p class="lede">This output is a structured draft. It must be reviewed by community validators before any escalation.</p>
+    </section>
+
+    @if (_isLoading)
+    {
+        <section class="empty-state">
+            <h2>Generating brief</h2>
+            <p>Running the demo accountability pipeline.</p>
+        </section>
+    }
+    else if (_result is null)
+    {
+        <section class="error-panel">
+            Could not load the accountability brief.
+        </section>
+    }
+    else
+    {
+        <section class="pipeline-grid">
+            <article class="metric-card">
+                <span>Issue type</span>
+                <strong>@_result.IssueType</strong>
+            </article>
+            <article class="metric-card">
+                <span>Urgency</span>
+                <strong>@_result.Urgency</strong>
+            </article>
+            <article class="metric-card">
+                <span>Confidence</span>
+                <strong>@_result.Confidence.ToString("0.00")</strong>
+            </article>
+        </section>
+
+        <section class="brief-layout">
+            <article class="brief-panel">
+                <h2>Pipeline Output</h2>
+                <h3>Summary</h3>
+                <p>@_result.Summary</p>
+                <h3>Gap Analysis</h3>
+                <p>@_result.GapAnalysis</p>
+                <h3>Reparative Proposal</h3>
+                <p>@_result.ReparativeProposal</p>
+
+                @if (_result.Flags.Count > 0)
+                {
+                    <h3>Flags</h3>
+                    <div class="validation-tags">
+                        @foreach (var flag in _result.Flags)
+                        {
+                            <span>@flag</span>
+                        }
+                    </div>
+                }
+            </article>
+
+            <article class="brief-panel">
+                <h2>Export-ready Markdown</h2>
+                <pre>@_result.AccountabilityBriefMarkdown</pre>
+            </article>
+        </section>
+    }
+</main>
+
+@code {
+    [Parameter]
+    public Guid ReportId { get; set; }
+
+    private ReportPipelineResultDto? _result;
+    private bool _isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+
+        try
+        {
+            _result = await ApiClient.GetPipelineResultAsync(ReportId);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

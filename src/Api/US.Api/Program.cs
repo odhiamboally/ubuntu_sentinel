@@ -1,3 +1,4 @@
+using US.Api.Features.Accountability;
 using US.Api.Features.Regions;
 using US.Api.Features.Reports;
 using US.Api.Features.Realtime;
@@ -22,6 +23,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddSingleton<IReportStore, InMemoryReportStore>();
 builder.Services.AddSingleton<IRegionProfileStore, RegionProfileStore>();
+builder.Services.AddSingleton<IAccountabilityPipeline, DeterministicAccountabilityPipeline>();
 
 var app = builder.Build();
 
@@ -39,6 +41,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapReportEndpoints();
 app.MapRegionEndpoints();
+app.MapAccountabilityEndpoints();
 app.MapHub<ReportHub>("/hubs/reports");
 
 app.Run();

@@ -51,6 +51,7 @@
                         <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @report.IssueType</p>
                         <h2>@report.Location.Name</h2>
                         <p>@Preview(report.Description)</p>
+                        <a class="inline-action" href="@($"/reports/{report.Id}/brief")">Generate accountability brief</a>
                     </div>
                     <dl>
                         <dt>Status</dt>
