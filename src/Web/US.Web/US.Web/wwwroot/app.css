@@ -67,6 +67,16 @@ a {
     cursor: pointer;
 }
 
+.topbar .mud-button-root.topbar-link,
+.topbar .mud-button-root.nav-dropdown-trigger {
+    color: #fff !important;
+}
+
+.topbar .mud-button-root.topbar-link .mud-button-label,
+.topbar .mud-button-root.nav-dropdown-trigger .mud-button-label {
+    color: #fff !important;
+}
+
 .topbar-link:hover,
 .topbar-link:focus-visible,
 .nav-dropdown-trigger:hover,
@@ -98,19 +108,188 @@ a {
     display: grid;
 }
 
-.nav-dropdown-menu a {
+.nav-menu-item {
+    justify-content: flex-start !important;
+    min-width: 100% !important;
     border-radius: 6px;
-    padding: .45rem .55rem;
-    color: #17211b;
-    font-weight: 700;
-    text-decoration: none;
-    white-space: nowrap;
+    padding: .3rem .55rem !important;
+    color: #17211b !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
 }
 
-.nav-dropdown-menu a:hover,
-.nav-dropdown-menu a:focus-visible {
-    background: #eef5ec;
+.nav-menu-item:hover,
+.nav-menu-item:focus-visible {
+    background: #eef5ec !important;
     outline: none;
+}
+
+.nav-menu-item .mud-button-label {
+    color: #17211b !important;
+}
+
+.ussd-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.phone-shell {
+    border: 1px solid #182b21;
+    border-radius: 24px;
+    padding: .9rem;
+    color: #f6fbf4;
+    background: #10271b;
+    box-shadow: 0 18px 50px rgba(16, 39, 27, .22);
+}
+
+.phone-top {
+    display: flex;
+    justify-content: space-between;
+    padding: .2rem .4rem .8rem;
+    font-size: .82rem;
+}
+
+.ussd-screen {
+    min-height: 300px;
+    border-radius: 14px;
+    padding: .85rem;
+    color: #17211b;
+    background: #e8eee9;
+}
+
+.ussd-screen pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: .95rem;
+    line-height: 1.45;
+}
+
+.ussd-input-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .5rem;
+    margin-top: .75rem;
+}
+
+.ussd-reply-field .mud-input-control-input-container,
+.ussd-reply-field .mud-input {
+    border-radius: 6px;
+    background: #fff !important;
+}
+
+.ussd-reply-field input {
+    color: #17211b !important;
+}
+
+.ussd-reply-field input::placeholder {
+    color: #6b756d !important;
+    opacity: 1;
+}
+
+.ussd-actions {
+    display: flex;
+    gap: .5rem;
+    justify-content: space-between;
+    margin-top: .35rem;
+}
+
+.demo-steps {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+    line-height: 1.65;
+}
+
+.map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    justify-content: flex-end;
+    font-weight: 800;
+}
+
+.map-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.zone-dot {
+    display: inline-block;
+    width: .65rem;
+    height: .65rem;
+    border-radius: 999px;
+}
+
+.conflict-dot {
+    background: #b42318;
+}
+
+.resilience-dot {
+    background: #1f7a4d;
+}
+
+.map-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, .55fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.peace-map {
+    position: relative;
+    min-height: 520px;
+    overflow: hidden;
+    border: 1px solid #dde5dc;
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(31, 111, 74, .14), transparent 32%),
+        linear-gradient(45deg, transparent 58%, rgba(180, 35, 24, .11)),
+        #eef3ef;
+    box-shadow: 0 16px 45px rgba(16, 39, 27, .08);
+}
+
+.peace-map::before {
+    position: absolute;
+    inset: 12%;
+    border: 1px solid rgba(16, 39, 27, .16);
+    border-radius: 48% 52% 46% 54%;
+    content: "";
+}
+
+.peace-map::after {
+    position: absolute;
+    inset: 23% 18% 20% 28%;
+    border: 1px dashed rgba(16, 39, 27, .2);
+    border-radius: 45% 55% 50% 50%;
+    content: "";
+}
+
+.zone-marker {
+    position: absolute;
+    z-index: 2;
+    display: inline-grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: 900;
+    box-shadow: 0 12px 24px rgba(16, 39, 27, .22);
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+}
+
+.conflict-zone {
+    background: #b42318;
+}
+
+.resilience-zone {
+    background: #1f7a4d;
 }
 
 .primary-link,
@@ -889,6 +1068,8 @@ h1 {
     .report-form,
     .dashboard-grid,
     .pipeline-grid,
+    .ussd-layout,
+    .map-layout,
     .report-card,
     .dashboard-hero,
     .validation-card,

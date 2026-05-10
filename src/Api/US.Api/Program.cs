@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using US.Api.Features.Accountability;
+using US.Api.Features.Intake;
 using US.Api.Features.Regions;
 using US.Api.Features.Reports;
 using US.Api.Features.Realtime;
@@ -29,6 +30,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<IReportStore, InMemoryReportStore>();
 builder.Services.AddSingleton<IRegionProfileStore, RegionProfileStore>();
 builder.Services.AddSingleton<IAccountabilityPipeline, DeterministicAccountabilityPipeline>();
+builder.Services.AddSingleton<UssdSessionStore>();
 
 var app = builder.Build();
 
@@ -52,6 +54,7 @@ app.MapGet("/", () => Results.Ok(new
     {
         "/api/regions",
         "/api/reports",
+        "/api/intake/ussd",
         "/api/reports/{id}/pipeline",
         "/hubs/reports"
     }
@@ -59,6 +62,7 @@ app.MapGet("/", () => Results.Ok(new
 app.MapReportEndpoints();
 app.MapRegionEndpoints();
 app.MapAccountabilityEndpoints();
+app.MapUssdEndpoints();
 app.MapHub<ReportHub>("/hubs/reports");
 
 app.Run();

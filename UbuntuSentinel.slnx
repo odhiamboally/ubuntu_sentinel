@@ -3,6 +3,7 @@
     <Project Path="src/Api/US.Api/US.Api.csproj" Id="208f4524-1b74-4fd0-b3cb-3b9297c2a755" />
     <Project Path="src/Application/US.Application/US.Application.csproj" Id="b0d4f77d-bdb8-44cb-87d3-4fdbdf4827d8" />
     <Project Path="src/Domain/US.Domain/US.Domain.csproj" Id="8faee96e-449f-4411-a45f-623dbd1fb4b8" />
+    <Project Path="src/Infrastructure/US.Infrastructure/US.Infrastructure.csproj" Id="b186c238-3f46-430b-b538-5787dfd2c0b3" />
     <Project Path="src/Persistence/US.Persistence/US.Persistence.csproj" Id="66ac88d3-4af2-47a6-8a85-06f35edff342" />
     <Project Path="src/SharedKernel/US.SharedKernel/US.SharedKernel.csproj" Id="7dfc61bf-0728-4fd2-bf6c-be71cc96bfa5" />
     <Project Path="src/Web/US.Web/US.Web.Client/US.Web.Client.csproj" Id="c50769e5-22ac-4879-8083-e16a446c09d6" />

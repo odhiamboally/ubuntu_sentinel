@@ -17,7 +17,7 @@ This is no longer a thin reporting MVP. The target is a prize-ready Andela x Ope
 - [ ] BaseTemplate-inspired solution structure:
   - [x] `US.Domain`
   - [x] `US.Application`
-  - [ ] `US.Infrastructure`
+  - [x] `US.Infrastructure`
   - [x] `US.Persistence`
   - [x] `US.Api`
   - [x] `US.Web` / `US.Web.Client`
@@ -26,8 +26,8 @@ This is no longer a thin reporting MVP. The target is a prize-ready Andela x Ope
 - [ ] Multi-channel intake:
   - [x] web submit flow
   - [x] offline browser queue foundation
-  - [ ] USSD simulator
-  - [ ] Africa's Talking webhook-shaped endpoint
+  - [x] USSD simulator foundation
+  - [x] Africa's Talking webhook-shaped endpoint foundation
   - [ ] SMS-shaped intake endpoint or simulator
 - [ ] Community data sovereignty:
   - [ ] consent captured at intake
@@ -51,8 +51,8 @@ This is no longer a thin reporting MVP. The target is a prize-ready Andela x Ope
   - [ ] community validator role view
   - [ ] brief escalation blocked until validation
 - [ ] Dual-zone map:
-  - [ ] conflict zones
-  - [ ] resilience zones
+  - [x] seeded conflict zones
+  - [x] seeded resilience zones
   - [ ] women-led/youth-led resilience signals
   - [ ] region filters
 - [ ] Accountability brief:

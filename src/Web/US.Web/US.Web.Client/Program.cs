@@ -4,7 +4,10 @@ using US.Web.Client.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5138";
+var hostBase = new Uri(builder.HostEnvironment.BaseAddress);
+var apiBaseUrl = hostBase.Scheme == Uri.UriSchemeHttps
+    ? builder.Configuration["HttpsApiBaseUrl"] ?? "https://localhost:7142"
+    : builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5138";
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
 builder.Services.AddScoped<UbuntuSentinelApiClient>();
 builder.Services.AddScoped<OfflineReportQueue>();

@@ -1,0 +1,76 @@
+@page "/map"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
+
+<PageTitle>Peace Map | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell">
+    <section class="hero-band dashboard-hero">
+        <div>
+            <p class="eyebrow">Dual-zone intelligence</p>
+            <h1>Conflict and resilience map</h1>
+            <p class="lede">Ubuntu Sentinel maps where accountability is failing and where community peace systems are working.</p>
+        </div>
+        <div class="map-legend">
+            <span><i class="zone-dot conflict-dot"></i> Conflict zone</span>
+            <span><i class="zone-dot resilience-dot"></i> Resilience zone</span>
+        </div>
+    </section>
+
+    <section class="map-layout">
+        <article class="peace-map">
+            @foreach (var zone in _zones)
+            {
+                <button class="zone-marker @zone.CssClass"
+                        style="left:@zone.X%; top:@zone.Y%;"
+                        title="@zone.Name"
+                        @onclick="@(() => _selected = zone)">
+                    <span>@zone.Label</span>
+                </button>
+            }
+        </article>
+
+        <article class="context-panel">
+            <p class="eyebrow">@_selected.Type</p>
+            <h2>@_selected.Name</h2>
+            <p>@_selected.Summary</p>
+            <dl>
+                <dt>Region</dt>
+                <dd>@_selected.Region</dd>
+                <dt>Evidence</dt>
+                <dd>@_selected.Evidence</dd>
+                <dt>Signal</dt>
+                <dd>@_selected.Signal</dd>
+            </dl>
+        </article>
+    </section>
+</main>
+
+@code {
+    private ZoneView _selected = default!;
+
+    private readonly List<ZoneView> _zones =
+    [
+        new("Conflict", "Sahel water commitment gap", "Sahel", "Broken promise", "3 community reports reference a delayed water point linked to a local development commitment.", "Mining/CDA promise tracking", 32, 34, "C", "conflict-zone"),
+        new("Resilience", "Women-led market mediation", "Sahel", "Mediation success", "Women mediators reopened a shared market route after farmer-herder tensions.", "Women-led peace infrastructure", 38, 42, "R", "resilience-zone"),
+        new("Conflict", "Eastern DRC extraction dispute", "Eastern DRC", "Resource conflict", "Reports describe extraction without clear community benefit delivery.", "Resource justice", 58, 58, "C", "conflict-zone"),
+        new("Resilience", "Youth early-warning circle", "Mozambique", "Community resilience", "Youth organizers coordinate alerts and safe routes during recovery periods.", "Youth-led resilience", 68, 72, "R", "resilience-zone")
+    ];
+
+    protected override void OnInitialized()
+    {
+        _selected = _zones[0];
+    }
+
+    private sealed record ZoneView(
+        string Type,
+        string Name,
+        string Region,
+        string Evidence,
+        string Summary,
+        string Signal,
+        int X,
+        int Y,
+        string Label,
+        string CssClass);
+}

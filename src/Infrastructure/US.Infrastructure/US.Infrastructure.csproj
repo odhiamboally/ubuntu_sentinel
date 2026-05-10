@@ -1,20 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Application\US.Application\US.Application.csproj" />
     <ProjectReference Include="..\..\Domain\US.Domain\US.Domain.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\US.Infrastructure\US.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\Persistence\US.Persistence\US.Persistence.csproj" />
     <ProjectReference Include="..\..\SharedKernel\US.SharedKernel\US.SharedKernel.csproj" />
   </ItemGroup>
 

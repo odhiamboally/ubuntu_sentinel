@@ -5,18 +5,21 @@
 <header class="topbar">
     <nav class="topbar-left" aria-label="Primary">
         <a href="/dashboard" class="brand">Ubuntu Sentinel</a>
-        <a href="/dashboard" class="topbar-link">Dashboard</a>
         <div class="nav-dropdown">
-            <button type="button" class="topbar-link nav-dropdown-trigger" aria-haspopup="true">
-                Reports
-                <span aria-hidden="true">v</span>
-            </button>
+            <MudButton Variant="Variant.Text" Size="Size.Small" Class="topbar-link nav-dropdown-trigger">Intake</MudButton>
             <div class="nav-dropdown-menu" role="menu">
-                <a href="/reports" role="menuitem">All reports</a>
-                <a href="/submit" role="menuitem">Submit</a>
-                <a href="/validate" role="menuitem">Validate</a>
+                <MudButton Href="/intake/ussd" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">USSD simulator</MudButton>
+                <MudButton Href="/submit" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">Web form</MudButton>
             </div>
         </div>
+        <div class="nav-dropdown">
+            <MudButton Variant="Variant.Text" Size="Size.Small" Class="topbar-link nav-dropdown-trigger">Reports</MudButton>
+            <div class="nav-dropdown-menu" role="menu">
+                <MudButton Href="/reports" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">All reports</MudButton>
+                <MudButton Href="/validate" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">Validate</MudButton>
+            </div>
+        </div>
+        <MudButton Href="/map" Variant="Variant.Text" Size="Size.Small" Class="topbar-link">Map</MudButton>
     </nav>
     <div class="topbar-right" aria-hidden="true"></div>
 </header>

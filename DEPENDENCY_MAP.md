@@ -80,9 +80,8 @@ flowchart TD
 ## Current Gaps
 
 - Existing report store still lives in API feature code.
-- `US.Infrastructure` project is not created yet.
 - PostgreSQL/pgvector-ready persistence is not implemented.
-- USSD simulator is not implemented.
-- Dual-zone map is not implemented.
+- USSD simulator is implemented as a foundation and needs polish/status tracking.
+- Dual-zone map is implemented as a seeded foundation and needs Leaflet/filters.
 - Role-shaped navigation is not implemented.
 - PDF generation is not implemented.

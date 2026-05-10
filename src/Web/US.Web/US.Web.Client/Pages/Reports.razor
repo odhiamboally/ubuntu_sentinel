@@ -7,7 +7,6 @@
 @using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
-@inject IConfiguration Configuration
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -101,9 +100,8 @@
         _reports.Clear();
         _reports.AddRange(await ApiClient.GetReportsAsync());
 
-        var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "http://localhost:5138";
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(new Uri(new Uri(apiBaseUrl), "/hubs/reports"))
+            .WithUrl(new Uri(ApiClient.ApiBaseUri, "/hubs/reports"))
             .WithAutomaticReconnect()
             .Build();
 
@@ -114,7 +112,14 @@
         _hubConnection.Reconnected += _ => InvokeAsync(StateHasChanged);
         _hubConnection.Closed += _ => InvokeAsync(StateHasChanged);
 
-        await _hubConnection.StartAsync();
+        try
+        {
+            await _hubConnection.StartAsync();
+        }
+        catch
+        {
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private void UpsertReport(ReportDto report)

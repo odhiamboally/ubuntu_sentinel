@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using US.SharedKernel.Contracts.Intake;
 using US.SharedKernel.Contracts.Regions;
 using US.SharedKernel.Contracts.Reports;
 
@@ -12,6 +13,9 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
     {
         Converters = { new JsonStringEnumConverter() }
     };
+
+    public Uri ApiBaseUri => httpClient.BaseAddress
+        ?? throw new InvalidOperationException("The API client was created without a base address.");
 
     public async Task<IReadOnlyList<RegionProfileDto>> GetRegionsAsync(CancellationToken cancellationToken = default)
     {
@@ -38,6 +42,15 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
 
         return await response.Content.ReadFromJsonAsync<ReportDto>(JsonOptions, cancellationToken)
             ?? throw new InvalidOperationException("The API returned an empty report response.");
+    }
+
+    public async Task<UssdSessionResponse> SendUssdAsync(UssdSessionRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PostAsJsonAsync("/api/intake/ussd", request, JsonOptions, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<UssdSessionResponse>(JsonOptions, cancellationToken)
+            ?? throw new InvalidOperationException("The API returned an empty USSD response.");
     }
 
     public async Task<ReportDto> ValidateReportAsync(Guid reportId, ValidateReportRequest request, CancellationToken cancellationToken = default)
