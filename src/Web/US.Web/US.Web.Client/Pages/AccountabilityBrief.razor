@@ -42,6 +42,18 @@
             </article>
         </section>
 
+        <section class="agent-timeline">
+            @foreach (var step in _result.Steps)
+            {
+                <article class="agent-step">
+                    <p class="eyebrow">@step.Name</p>
+                    <h2>@step.Purpose</h2>
+                    <p>@step.Output</p>
+                    <span>Confidence @step.Confidence.ToString("0.00")</span>
+                </article>
+            }
+        </section>
+
         <section class="brief-layout">
             <article class="brief-panel">
                 <h2>Pipeline Output</h2>

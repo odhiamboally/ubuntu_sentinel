@@ -12,6 +12,7 @@ public sealed record ReportPipelineResultDto
     public string GapAnalysis { get; init; } = string.Empty;
     public string ReparativeProposal { get; init; } = string.Empty;
     public string AccountabilityBriefMarkdown { get; init; } = string.Empty;
+    public IReadOnlyList<PipelineStepDto> Steps { get; init; } = [];
     public IReadOnlyList<string> Flags { get; init; } = [];
     public IReadOnlyList<string> Citations { get; init; } = [];
 }

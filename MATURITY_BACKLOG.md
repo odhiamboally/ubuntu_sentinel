@@ -63,9 +63,9 @@ Important for a serious implementation after the capstone.
 | Level | Item | Why It Matters | Status |
 | --- | --- | --- | --- |
 | MVP | Deterministic fallback pipeline output | Keeps demo resilient without an API key | Done |
-| MVP | Validation Agent structured report output | Shows Codex/OpenAI agentic workflow | Partial |
+| MVP | Validation Agent structured report output | Shows Codex/OpenAI agentic workflow | Done |
 | MVP | Accountability brief markdown generation | Produces the judge-facing artifact | Done |
-| Demo Plus | Step-by-step pipeline timeline in UI | Makes AI assistance visible and explainable | Pending |
+| Demo Plus | Step-by-step pipeline timeline in UI | Makes AI assistance visible and explainable | Done |
 | Demo Plus | Seeded commitment comparison | Shows OSF accountability alignment | Partial |
 | Production Path | RAG over vetted agreements and policy documents | Enables real document intelligence | Pending |
 | Production Path | Model output evaluation and human override | Reduces hallucination and protects communities | Pending |

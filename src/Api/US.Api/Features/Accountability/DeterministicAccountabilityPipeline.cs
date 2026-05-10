@@ -40,6 +40,39 @@ public sealed class DeterministicAccountabilityPipeline : IAccountabilityPipelin
             GapAnalysis = gapAnalysis,
             ReparativeProposal = reparativeProposal,
             AccountabilityBriefMarkdown = BuildBrief(report, summary, gapAnalysis, reparativeProposal),
+            Steps =
+            [
+                new PipelineStepDto
+                {
+                    Name = "Validation Agent",
+                    Purpose = "Structure the raw community report and identify basic confidence signals.",
+                    Output = $"Classified as {FormatIssueType(report.IssueType)} with {report.Urgency.ToString().ToLowerInvariant()} urgency and {report.Location.Confidence.ToString().ToLowerInvariant()} location confidence.",
+                    Confidence = 0.72m
+                },
+                new PipelineStepDto
+                {
+                    Name = "Document Intelligence Agent",
+                    Purpose = "Compare the report against seeded commitments or policy language.",
+                    Output = hasCommitment
+                        ? "Potential commitment reference detected; demo seed clause should be verified by a human reviewer."
+                        : "No clear commitment reference detected; report needs follow-up evidence before escalation.",
+                    Confidence = hasCommitment ? 0.70m : 0.48m
+                },
+                new PipelineStepDto
+                {
+                    Name = "Reparative Justice Calculator",
+                    Purpose = "Translate harm signals into concrete, community-validated repair options.",
+                    Output = reparativeProposal,
+                    Confidence = 0.64m
+                },
+                new PipelineStepDto
+                {
+                    Name = "Advocacy Drafter",
+                    Purpose = "Generate a concise accountability brief for validator review.",
+                    Output = "Drafted export-ready markdown with evidence, gap analysis, proposal, next steps, and Ubuntu principle.",
+                    Confidence = 0.76m
+                }
+            ],
             Flags = BuildFlags(report, hasCommitment),
             Citations = hasCommitment ? ["Seed CDA demo clause: Section 4.2 - community water access commitment"] : []
         });
