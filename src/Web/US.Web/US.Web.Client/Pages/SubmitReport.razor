@@ -1,0 +1,183 @@
+@page "/submit"
+@rendermode InteractiveWebAssembly
+@using US.SharedKernel.Contracts.Regions
+@using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
+@inject Services.UbuntuSentinelApiClient ApiClient
+
+<PageTitle>Submit Report | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell">
+    <section class="hero-band">
+        <p class="eyebrow">Community reporting</p>
+        <h1>Submit a community accountability report</h1>
+        <p class="lede">Capture what happened, where it happened, and who is leading the response. AI will help structure the report, but human validators decide what moves forward.</p>
+    </section>
+
+    <section class="workspace-grid">
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync" class="report-form">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <label>
+                Region
+                <InputSelect @bind-Value="_model.RegionCode">
+                    @foreach (var region in _regions)
+                    {
+                        <option value="@region.Code">@region.Name</option>
+                    }
+                </InputSelect>
+            </label>
+
+            <label>
+                Language
+                <InputSelect @bind-Value="_model.LanguageCode">
+                    @foreach (var language in CurrentLanguages)
+                    {
+                        <option value="@language.Code">@language.Name</option>
+                    }
+                </InputSelect>
+            </label>
+
+            <label>
+                Location
+                <InputText @bind-Value="_model.LocationName" placeholder="Village, town, landmark, or GPS hint" />
+            </label>
+
+            <label>
+                Issue type
+                <InputSelect @bind-Value="_model.IssueTypeHint">
+                    @foreach (var issueType in Enum.GetValues<IssueType>())
+                    {
+                        <option value="@issueType">@FormatIssueType(issueType)</option>
+                    }
+                </InputSelect>
+            </label>
+
+            <label class="full-span">
+                What happened?
+                <InputTextArea @bind-Value="_model.Description" rows="7" placeholder="Describe the report in the community member's own words." />
+            </label>
+
+            <div class="check-row full-span">
+                <label><InputCheckbox @bind-Value="_model.WomenLed" /> Women-led</label>
+                <label><InputCheckbox @bind-Value="_model.YouthLed" /> Youth-led</label>
+                <label><InputCheckbox @bind-Value="_model.IsSensitive" /> Sensitive/anonymize</label>
+            </div>
+
+            <button type="submit" disabled="@_isSubmitting">@(_isSubmitting ? "Submitting..." : "Submit report")</button>
+        </EditForm>
+
+        <aside class="context-panel">
+            <h2>Region context</h2>
+            @if (CurrentRegion is null)
+            {
+                <p>Loading region profiles...</p>
+            }
+            else
+            {
+                <h3>@CurrentRegion.Name</h3>
+                <p>@CurrentRegion.Description</p>
+                <dl>
+                    <dt>Regional bodies</dt>
+                    <dd>@string.Join(", ", CurrentRegion.RegionalBodies)</dd>
+                    <dt>Escalation pathways</dt>
+                    <dd>@string.Join(" -> ", CurrentRegion.EscalationPathways)</dd>
+                </dl>
+            }
+        </aside>
+    </section>
+
+    @if (_submittedReport is not null)
+    {
+        <section class="result-panel">
+            <p class="eyebrow">Submitted</p>
+            <h2>Report queued for human validation</h2>
+            <p><strong>ID:</strong> @_submittedReport.Id</p>
+            <p><strong>Status:</strong> @_submittedReport.Status</p>
+            <p><strong>Urgency:</strong> @_submittedReport.Urgency</p>
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <section class="error-panel">
+            @_errorMessage
+        </section>
+    }
+</main>
+
+@code {
+    private SubmitReportRequest _model = new()
+    {
+        RegionCode = "drc",
+        LanguageCode = "fr",
+        IssueTypeHint = IssueType.BrokenPromise
+    };
+
+    private IReadOnlyList<RegionProfileDto> _regions = [];
+    private ReportDto? _submittedReport;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    private RegionProfileDto? CurrentRegion =>
+        _regions.FirstOrDefault(region => region.Code == _model.RegionCode);
+
+    private IReadOnlyList<LanguageOptionDto> CurrentLanguages =>
+        CurrentRegion?.Languages ?? [new LanguageOptionDto { Code = "en", Name = "English", IsDefault = true }];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _regions = await ApiClient.GetRegionsAsync();
+        var defaultRegion = _regions.FirstOrDefault(region => region.Code == _model.RegionCode) ?? _regions.FirstOrDefault();
+
+        if (defaultRegion is not null)
+        {
+            _model = _model with
+            {
+                RegionCode = defaultRegion.Code,
+                LanguageCode = defaultRegion.Languages.FirstOrDefault(language => language.IsDefault)?.Code
+                    ?? defaultRegion.Languages.FirstOrDefault()?.Code
+                    ?? "en"
+            };
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+        _submittedReport = null;
+
+        try
+        {
+            _submittedReport = await ApiClient.SubmitReportAsync(_model);
+            _model = _model with { Description = string.Empty, LocationName = string.Empty };
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Could not submit the report yet. Offline queue support is next; for now, confirm the API is running. Details: {ex.Message}";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private static string FormatIssueType(IssueType issueType)
+    {
+        return issueType switch
+        {
+            IssueType.BrokenPromise => "Broken promise",
+            IssueType.ResourceConflict => "Resource conflict",
+            IssueType.GovernanceFailure => "Governance failure",
+            IssueType.SecurityConcern => "Security concern",
+            IssueType.ServiceGap => "Service gap",
+            IssueType.EnvironmentalHarm => "Environmental harm",
+            IssueType.MediationSuccess => "Mediation success",
+            IssueType.RecoveryNeed => "Recovery need",
+            IssueType.CommunityResilience => "Community resilience",
+            _ => "Other"
+        };
+    }
+}

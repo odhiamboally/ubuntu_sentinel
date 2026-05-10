@@ -9,6 +9,7 @@ public enum IssueType
     ServiceGap = 4,
     EnvironmentalHarm = 5,
     MediationSuccess = 6,
-    CommunityResilience = 7,
-    Other = 8
+    RecoveryNeed = 7,
+    CommunityResilience = 8,
+    Other = 9
 }
