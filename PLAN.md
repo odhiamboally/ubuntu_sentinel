@@ -12,7 +12,7 @@ Build a working 3-day proof-of-concept that demonstrates community reporting, lo
 - [x] Implement report submission endpoint.
 - [x] Implement frontend report form.
 - [x] Add region profile seed data.
-- [ ] Add localization foundation and initial language resources.
+- [x] Add localization foundation and initial language resources.
 - [x] Confirm the solution builds.
 
 ## Day 2 - Offline, Sync, Validation

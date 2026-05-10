@@ -5,16 +5,17 @@
 @using US.SharedKernel.Enums
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.OfflineReportQueue OfflineQueue
+@inject Services.UiTextService Text
 @inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 
-<PageTitle>Submit Report | Ubuntu Sentinel</PageTitle>
+<PageTitle>@T("Submit.Title") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
     <section class="hero-band">
-        <p class="eyebrow">Community reporting</p>
-        <h1>Submit a community accountability report</h1>
-        <p class="lede">Capture what happened, where it happened, and who is leading the response. AI will help structure the report, but human validators decide what moves forward.</p>
+        <p class="eyebrow">@T("Submit.Eyebrow")</p>
+        <h1>@T("Submit.Title")</h1>
+        <p class="lede">@T("Submit.Lede")</p>
     </section>
 
     <section class="workspace-grid">
@@ -23,7 +24,7 @@
             <ValidationSummary />
 
             <label>
-                Region
+                @T("Common.Region")
                 <InputSelect @bind-Value="_model.RegionCode">
                     @foreach (var region in _regions)
                     {
@@ -33,7 +34,7 @@
             </label>
 
             <label>
-                Language
+                @T("Common.Language")
                 <InputSelect @bind-Value="_model.LanguageCode">
                     @foreach (var language in CurrentLanguages)
                     {
@@ -43,56 +44,56 @@
             </label>
 
             <label>
-                Location
-                <InputText @bind-Value="_model.LocationName" placeholder="Village, town, landmark, or GPS hint" />
+                @T("Common.Location")
+                <InputText @bind-Value="_model.LocationName" placeholder="@T("Submit.LocationPlaceholder")" />
             </label>
 
             <label>
-                Issue type
+                @T("Common.IssueType")
                 <InputSelect @bind-Value="_model.IssueTypeHint">
                     @foreach (var issueType in Enum.GetValues<IssueType>())
                     {
-                        <option value="@issueType">@FormatIssueType(issueType)</option>
+                        <option value="@issueType">@Text.IssueType(_model.LanguageCode, issueType)</option>
                     }
                 </InputSelect>
             </label>
 
             <label class="full-span">
-                What happened?
-                <InputTextArea @bind-Value="_model.Description" rows="7" placeholder="Describe the report in the community member's own words." />
+                @T("Submit.WhatHappened")
+                <InputTextArea @bind-Value="_model.Description" rows="7" placeholder="@T("Submit.DescriptionPlaceholder")" />
             </label>
 
             <div class="check-row full-span">
-                <label><InputCheckbox @bind-Value="_model.WomenLed" /> Women-led</label>
-                <label><InputCheckbox @bind-Value="_model.YouthLed" /> Youth-led</label>
-                <label><InputCheckbox @bind-Value="_model.IsSensitive" /> Sensitive/anonymize</label>
+                <label><InputCheckbox @bind-Value="_model.WomenLed" /> @T("Submit.WomenLed")</label>
+                <label><InputCheckbox @bind-Value="_model.YouthLed" /> @T("Submit.YouthLed")</label>
+                <label><InputCheckbox @bind-Value="_model.IsSensitive" /> @T("Submit.Sensitive")</label>
             </div>
 
-            <button type="submit" disabled="@_isSubmitting">@(_isSubmitting ? "Submitting..." : "Submit report")</button>
+            <button type="submit" disabled="@_isSubmitting">@(_isSubmitting ? T("Submit.Submitting") : T("Submit.Submit"))</button>
         </EditForm>
 
         <aside class="context-panel">
             <div class="sync-strip">
-                <span class="@(_isOnline ? "status-online" : "status-offline")">@(_isOnline ? "Online" : "Offline")</span>
-                <span>@_pendingCount pending</span>
+                <span class="@(_isOnline ? "status-online" : "status-offline")">@(_isOnline ? T("Common.Online") : T("Common.Offline"))</span>
+                <span>@_pendingCount @T("Common.Pending")</span>
                 <button type="button" @onclick="SyncPendingAsync" disabled="@(_isSyncing || _pendingCount == 0)">
-                    @(_isSyncing ? "Syncing..." : "Sync")
+                    @(_isSyncing ? T("Common.Syncing") : T("Common.Sync"))
                 </button>
             </div>
 
-            <h2>Region context</h2>
+            <h2>@T("Submit.RegionContext")</h2>
             @if (CurrentRegion is null)
             {
-                <p>Loading region profiles...</p>
+                <p>@T("Submit.LoadingRegions")</p>
             }
             else
             {
                 <h3>@CurrentRegion.Name</h3>
                 <p>@CurrentRegion.Description</p>
                 <dl>
-                    <dt>Regional bodies</dt>
+                    <dt>@T("Submit.RegionalBodies")</dt>
                     <dd>@string.Join(", ", CurrentRegion.RegionalBodies)</dd>
-                    <dt>Escalation pathways</dt>
+                    <dt>@T("Submit.EscalationPathways")</dt>
                     <dd>@string.Join(" -> ", CurrentRegion.EscalationPathways)</dd>
                 </dl>
             }
@@ -102,11 +103,11 @@
     @if (_submittedReport is not null)
     {
         <section class="result-panel">
-            <p class="eyebrow">Submitted</p>
-            <h2>Report queued for human validation</h2>
+            <p class="eyebrow">@T("Submit.Submitted")</p>
+            <h2>@T("Submit.Queued")</h2>
             <p><strong>ID:</strong> @_submittedReport.Id</p>
-            <p><strong>Status:</strong> @_submittedReport.Status</p>
-            <p><strong>Urgency:</strong> @_submittedReport.Urgency</p>
+            <p><strong>@T("Common.Status"):</strong> @_submittedReport.Status</p>
+            <p><strong>@T("Common.Urgency"):</strong> @_submittedReport.Urgency</p>
         </section>
     }
 
@@ -199,7 +200,7 @@
         {
             await OfflineQueue.EnqueueAsync(_model);
             _pendingCount = await OfflineQueue.GetPendingCountAsync();
-            _syncMessage = "No connection to the API right now. The report was saved locally and can be synced later.";
+            _syncMessage = T("Submit.SavedOffline");
             _model = _model with { Description = string.Empty, LocationName = string.Empty };
         }
         finally
@@ -232,8 +233,8 @@
             var result = await OfflineQueue.SyncAsync();
             _pendingCount = await OfflineQueue.GetPendingCountAsync();
             _syncMessage = result.Remaining == 0
-                ? $"Synced {result.Synced} pending report(s)."
-                : $"Synced {result.Synced} of {result.Attempted}. {result.Remaining} still pending.";
+                ? Text.Format(_model.LanguageCode, "Submit.SyncedAll", result.Synced)
+                : Text.Format(_model.LanguageCode, "Submit.SyncedSome", result.Synced, result.Attempted, result.Remaining);
         }
         finally
         {
@@ -241,22 +242,7 @@
         }
     }
 
-    private static string FormatIssueType(IssueType issueType)
-    {
-        return issueType switch
-        {
-            IssueType.BrokenPromise => "Broken promise",
-            IssueType.ResourceConflict => "Resource conflict",
-            IssueType.GovernanceFailure => "Governance failure",
-            IssueType.SecurityConcern => "Security concern",
-            IssueType.ServiceGap => "Service gap",
-            IssueType.EnvironmentalHarm => "Environmental harm",
-            IssueType.MediationSuccess => "Mediation success",
-            IssueType.RecoveryNeed => "Recovery need",
-            IssueType.CommunityResilience => "Community resilience",
-            _ => "Other"
-        };
-    }
+    private string T(string key) => Text.Text(_model.LanguageCode, key);
 
     public async ValueTask DisposeAsync()
     {

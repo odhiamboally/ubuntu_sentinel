@@ -268,6 +268,29 @@ h1 {
     font-weight: 800;
 }
 
+.page-controls {
+    display: grid;
+    justify-items: end;
+    gap: .75rem;
+}
+
+.page-controls label {
+    display: grid;
+    gap: .35rem;
+    color: #324035;
+    font-weight: 800;
+}
+
+.page-controls select {
+    min-width: 150px;
+    border: 1px solid #cbd8ca;
+    border-radius: 6px;
+    padding: .55rem .65rem;
+    color: #17211b;
+    background: #fff;
+    font: inherit;
+}
+
 .connection-live {
     color: #0f5132;
     background: #d8f3df;
@@ -515,6 +538,10 @@ h1 {
 
     .dashboard-hero {
         align-items: start;
+    }
+
+    .page-controls {
+        justify-items: start;
     }
 }
 

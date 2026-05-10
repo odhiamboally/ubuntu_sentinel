@@ -3,33 +3,43 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using US.SharedKernel.Contracts.Reports
 @inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.UiTextService Text
 @inject IConfiguration Configuration
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
 
-<PageTitle>Dashboard | Ubuntu Sentinel</PageTitle>
+<PageTitle>@T("Dashboard.Title") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
     <section class="hero-band dashboard-hero">
         <div>
-            <p class="eyebrow">Realtime dashboard</p>
-            <h1>Community reports as they arrive</h1>
-            <p class="lede">Validated humans stay in control, while SignalR keeps the dashboard current as reports are submitted or reviewed.</p>
+            <p class="eyebrow">@T("Dashboard.Eyebrow")</p>
+            <h1>@T("Dashboard.Title")</h1>
+            <p class="lede">@T("Dashboard.Lede")</p>
         </div>
-        <div class="connection-pill @ConnectionCss">@ConnectionLabel</div>
+        <div class="page-controls">
+            <label>
+                @T("Common.Language")
+                <select @bind="_language">
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                </select>
+            </label>
+            <div class="connection-pill @ConnectionCss">@ConnectionLabel</div>
+        </div>
     </section>
 
     <section class="dashboard-grid">
         <article class="metric-card">
-            <span>Total reports</span>
+            <span>@T("Dashboard.Total")</span>
             <strong>@_reports.Count</strong>
         </article>
         <article class="metric-card">
-            <span>Pending validation</span>
+            <span>@T("Dashboard.PendingValidation")</span>
             <strong>@_reports.Count(report => report.Status == US.SharedKernel.Enums.ReportStatus.PendingValidation)</strong>
         </article>
         <article class="metric-card">
-            <span>High/Critical urgency</span>
+            <span>@T("Dashboard.HighCritical")</span>
             <strong>@_reports.Count(report => report.Urgency >= US.SharedKernel.Enums.UrgencyLevel.High)</strong>
         </article>
     </section>
@@ -38,8 +48,8 @@
         @if (_reports.Count == 0)
         {
             <article class="empty-state">
-                <h2>No reports yet</h2>
-                <p>Submit a report to see the realtime feed update.</p>
+                <h2>@T("Dashboard.EmptyTitle")</h2>
+                <p>@T("Dashboard.EmptyBody")</p>
             </article>
         }
         else
@@ -48,17 +58,17 @@
             {
                 <article class="report-card">
                     <div>
-                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @report.IssueType</p>
+                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @Text.IssueType(_language, report.IssueType)</p>
                         <h2>@report.Location.Name</h2>
                         <p>@Preview(report.Description)</p>
-                        <a class="inline-action" href="@($"/reports/{report.Id}/brief")">Generate accountability brief</a>
+                        <a class="inline-action" href="@($"/reports/{report.Id}/brief")">@T("Dashboard.GenerateBrief")</a>
                     </div>
                     <dl>
-                        <dt>Status</dt>
+                        <dt>@T("Common.Status")</dt>
                         <dd>@report.Status</dd>
-                        <dt>Urgency</dt>
+                        <dt>@T("Common.Urgency")</dt>
                         <dd>@report.Urgency</dd>
-                        <dt>Submitted</dt>
+                        <dt>@T("Common.Submitted")</dt>
                         <dd>@report.SubmittedAt.LocalDateTime.ToString("g")</dd>
                     </dl>
                 </article>
@@ -70,12 +80,13 @@
 @code {
     private readonly List<ReportDto> _reports = [];
     private HubConnection? _hubConnection;
+    private string _language = "en";
 
     private string ConnectionLabel => _hubConnection?.State switch
     {
-        HubConnectionState.Connected => "Live",
-        HubConnectionState.Connecting or HubConnectionState.Reconnecting => "Connecting",
-        _ => "Offline"
+        HubConnectionState.Connected => T("Dashboard.Live"),
+        HubConnectionState.Connecting or HubConnectionState.Reconnecting => T("Dashboard.Connecting"),
+        _ => T("Common.Offline")
     };
 
     private string ConnectionCss => _hubConnection?.State == HubConnectionState.Connected
@@ -122,6 +133,8 @@
         const int maxLength = 180;
         return value.Length <= maxLength ? value : $"{value[..maxLength]}...";
     }
+
+    private string T(string key) => Text.Text(_language, key);
 
     public async ValueTask DisposeAsync()
     {

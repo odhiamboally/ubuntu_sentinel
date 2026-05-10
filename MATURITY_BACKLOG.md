@@ -52,8 +52,10 @@ Important for a serious implementation after the capstone.
 | Level | Item | Why It Matters | Status |
 | --- | --- | --- | --- |
 | MVP | Region profiles for OSF areas | Shows adaptability across DRC, Sahel, Sudan, Mozambique | Done |
-| MVP | English plus one OSF-relevant language path | Demonstrates multilingual readiness | In progress |
+| MVP | English plus one OSF-relevant language path | Demonstrates multilingual readiness | Done |
 | Demo Plus | Resource-backed UI localization | Avoids hardcoded interface text | Pending |
+| Demo Plus | Full UI localization across every page | Extends beyond the judge-facing MVP pages | Pending |
+| Demo Plus | Generated brief localization | Lets accountability briefs be drafted in the selected output language | Pending |
 | Demo Plus | Region-specific issue labels and escalation pathways | Makes each operating area feel grounded | Pending |
 | Production Path | Translation workflow with human review | Prevents unsafe or inaccurate automated translation | Pending |
 | Production Path | Local dialect/community terminology packs | Supports real community adoption | Pending |

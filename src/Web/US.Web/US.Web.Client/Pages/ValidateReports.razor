@@ -3,34 +3,46 @@
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
 @inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.UiTextService Text
 
-<PageTitle>Validate Reports | Ubuntu Sentinel</PageTitle>
+<PageTitle>@T("Validate.Title") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
-    <section class="hero-band">
-        <p class="eyebrow">Human validation</p>
-        <h1>Review community reports before escalation</h1>
-        <p class="lede">AI can structure and summarize evidence, but validators decide what is approved, rejected, or sent for follow-up.</p>
+    <section class="hero-band dashboard-hero">
+        <div>
+            <p class="eyebrow">@T("Validate.Eyebrow")</p>
+            <h1>@T("Validate.Title")</h1>
+            <p class="lede">@T("Validate.Lede")</p>
+        </div>
+        <div class="page-controls">
+            <label>
+                @T("Common.Language")
+                <select @bind="_language">
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                </select>
+            </label>
+        </div>
     </section>
 
     <section class="validation-toolbar">
-        <button type="button" @onclick="LoadReportsAsync" disabled="@_isLoading">@(_isLoading ? "Refreshing..." : "Refresh")</button>
-        <span>@PendingReports.Count pending validation</span>
+        <button type="button" @onclick="LoadReportsAsync" disabled="@_isLoading">@(_isLoading ? T("Common.Refreshing") : T("Common.Refresh"))</button>
+        <span>@PendingReports.Count @T("Validate.Pending")</span>
     </section>
 
     <section class="report-list">
         @if (_isLoading)
         {
             <article class="empty-state">
-                <h2>Loading reports</h2>
-                <p>Fetching the latest validation queue.</p>
+                <h2>@T("Validate.LoadingTitle")</h2>
+                <p>@T("Validate.LoadingBody")</p>
             </article>
         }
         else if (PendingReports.Count == 0)
         {
             <article class="empty-state">
-                <h2>No pending reports</h2>
-                <p>New submissions will appear here for human review.</p>
+                <h2>@T("Validate.EmptyTitle")</h2>
+                <p>@T("Validate.EmptyBody")</p>
             </article>
         }
         else
@@ -39,7 +51,7 @@
             {
                 <article class="validation-card">
                     <div class="validation-main">
-                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @report.IssueType · @report.Urgency</p>
+                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @Text.IssueType(_language, report.IssueType) · @report.Urgency</p>
                         <h2>@report.Location.Name</h2>
                         <p>@report.Description</p>
                         <div class="validation-tags">
@@ -60,13 +72,13 @@
 
                     <div class="validation-actions">
                         <label>
-                            Validator notes
-                            <textarea value="@GetNotes(report.Id)" @oninput="eventArgs => SetNotes(report.Id, eventArgs.Value?.ToString())" rows="4" placeholder="What should advocates or follow-up teams know?"></textarea>
+                            @T("Validate.Notes")
+                            <textarea value="@GetNotes(report.Id)" @oninput="eventArgs => SetNotes(report.Id, eventArgs.Value?.ToString())" rows="4" placeholder="@T("Validate.NotesPlaceholder")"></textarea>
                         </label>
                         <div class="button-row">
-                            <button type="button" class="approve" @onclick="() => DecideAsync(report.Id, ValidationDecision.Approve)">Approve</button>
-                            <button type="button" class="follow-up" @onclick="() => DecideAsync(report.Id, ValidationDecision.NeedsFollowUp)">Follow-up</button>
-                            <button type="button" class="reject" @onclick="() => DecideAsync(report.Id, ValidationDecision.Reject)">Reject</button>
+                            <button type="button" class="approve" @onclick="() => DecideAsync(report.Id, ValidationDecision.Approve)">@T("Validate.Approve")</button>
+                            <button type="button" class="follow-up" @onclick="() => DecideAsync(report.Id, ValidationDecision.NeedsFollowUp)">@T("Validate.FollowUp")</button>
+                            <button type="button" class="reject" @onclick="() => DecideAsync(report.Id, ValidationDecision.Reject)">@T("Validate.Reject")</button>
                         </div>
                     </div>
                 </article>
@@ -85,6 +97,7 @@
     private IReadOnlyList<ReportDto> _reports = [];
     private bool _isLoading;
     private string? _message;
+    private string _language = "en";
 
     private List<ReportDto> PendingReports => _reports
         .Where(report => report.Status == ReportStatus.PendingValidation)
@@ -138,6 +151,8 @@
             .Select(report => report.Id == updated.Id ? updated : report)
             .ToList();
 
-        _message = $"Report {updated.Id} marked as {updated.Status}.";
+        _message = Text.Format(_language, "Validate.Marked", updated.Id, updated.Status);
     }
+
+    private string T(string key) => Text.Text(_language, key);
 }
