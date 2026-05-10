@@ -6,24 +6,25 @@ Build a working 3-day proof-of-concept that demonstrates community reporting, lo
 
 ## Day 1 - Foundation
 
-- Create solution structure.
-- Add API, Blazor Web, and Shared projects.
-- Define shared contracts and enums.
-- Implement report submission endpoint.
-- Implement frontend report form.
-- Add region profile seed data.
-- Add localization foundation and initial language resources.
-- Confirm the solution builds.
+- [x] Create solution structure.
+- [x] Add API, Blazor Web, and Shared projects.
+- [x] Define shared contracts and enums.
+- [x] Implement report submission endpoint.
+- [x] Implement frontend report form.
+- [x] Add region profile seed data.
+- [ ] Add localization foundation and initial language resources.
+- [x] Confirm the solution builds.
 
 ## Day 2 - Offline, Sync, Validation
 
-- Add browser-side offline queue.
-- Add sync service and visible pending count.
-- Add SignalR hub for report updates.
-- Add dashboard report list/map-ready view.
-- Add validator workflow: approve, reject, needs follow-up.
-- Add seeded/demo persistence if full database setup slows the build.
-- Manually verify the offline-to-online demo path.
+- [x] Add browser-side offline queue.
+- [x] Add sync service and visible pending count.
+- [x] Add automatic sync when browser connectivity returns.
+- [x] Add SignalR hub for report updates.
+- [x] Add dashboard report list/map-ready view.
+- [x] Add validator workflow: approve, reject, needs follow-up.
+- [x] Add seeded/demo persistence if full database setup slows the build.
+- [ ] Manually verify the offline-to-online demo path.
 
 ## Day 3 - AI Pipeline, Demo Polish, Docs
 

@@ -25,9 +25,9 @@ Important for a serious implementation after the capstone.
 | Level | Item | Why It Matters | Status |
 | --- | --- | --- | --- |
 | MVP | Manual sync button with pending count | Makes offline behavior visible and easy to demo | Done |
-| MVP | Automatic sync on browser `online` event | Better matches user expectations after connectivity returns | Next |
+| MVP | Automatic sync on browser `online` event | Better matches user expectations after connectivity returns | Done |
 | Demo Plus | Retry backoff and last-attempt status | Prevents noisy repeated failures and explains sync state | Pending |
-| Demo Plus | Connectivity indicator in the shell | Makes low-bandwidth readiness obvious to judges | Pending |
+| Demo Plus | Connectivity indicator in the shell | Makes low-bandwidth readiness obvious to judges | Partial |
 | Production Path | IndexedDB storage instead of `localStorage` | Supports larger payloads and more durable offline storage | Pending |
 | Production Path | Background sync through service worker | Enables sync even when the user is not actively on the form | Pending |
 | Production Path | Conflict handling for duplicate/resubmitted reports | Prevents accidental duplicate escalation | Pending |
@@ -76,8 +76,8 @@ Important for a serious implementation after the capstone.
 
 | Level | Item | Why It Matters | Status |
 | --- | --- | --- | --- |
-| MVP | SignalR dashboard update after report submission | Demonstrates live sync | Pending |
-| Demo Plus | Validator receives new report notification | Makes workflow feel operational | Pending |
+| MVP | SignalR dashboard update after report submission | Demonstrates live sync | Done |
+| Demo Plus | Validator receives new report notification | Makes workflow feel operational | Partial |
 | Production Path | Multi-validator assignment and review state | Supports real moderation teams | Pending |
 
 ## Persistence

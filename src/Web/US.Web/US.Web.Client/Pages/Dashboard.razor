@@ -1,0 +1,132 @@
+@page "/dashboard"
+@rendermode InteractiveWebAssembly
+@using Microsoft.AspNetCore.SignalR.Client
+@using US.SharedKernel.Contracts.Reports
+@inject Services.UbuntuSentinelApiClient ApiClient
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Dashboard | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell">
+    <section class="hero-band dashboard-hero">
+        <div>
+            <p class="eyebrow">Realtime dashboard</p>
+            <h1>Community reports as they arrive</h1>
+            <p class="lede">Validated humans stay in control, while SignalR keeps the dashboard current as reports are submitted or reviewed.</p>
+        </div>
+        <div class="connection-pill @ConnectionCss">@ConnectionLabel</div>
+    </section>
+
+    <section class="dashboard-grid">
+        <article class="metric-card">
+            <span>Total reports</span>
+            <strong>@_reports.Count</strong>
+        </article>
+        <article class="metric-card">
+            <span>Pending validation</span>
+            <strong>@_reports.Count(report => report.Status == US.SharedKernel.Enums.ReportStatus.PendingValidation)</strong>
+        </article>
+        <article class="metric-card">
+            <span>High/Critical urgency</span>
+            <strong>@_reports.Count(report => report.Urgency >= US.SharedKernel.Enums.UrgencyLevel.High)</strong>
+        </article>
+    </section>
+
+    <section class="report-list">
+        @if (_reports.Count == 0)
+        {
+            <article class="empty-state">
+                <h2>No reports yet</h2>
+                <p>Submit a report to see the realtime feed update.</p>
+            </article>
+        }
+        else
+        {
+            @foreach (var report in _reports)
+            {
+                <article class="report-card">
+                    <div>
+                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @report.IssueType</p>
+                        <h2>@report.Location.Name</h2>
+                        <p>@Preview(report.Description)</p>
+                    </div>
+                    <dl>
+                        <dt>Status</dt>
+                        <dd>@report.Status</dd>
+                        <dt>Urgency</dt>
+                        <dd>@report.Urgency</dd>
+                        <dt>Submitted</dt>
+                        <dd>@report.SubmittedAt.LocalDateTime.ToString("g")</dd>
+                    </dl>
+                </article>
+            }
+        }
+    </section>
+</main>
+
+@code {
+    private readonly List<ReportDto> _reports = [];
+    private HubConnection? _hubConnection;
+
+    private string ConnectionLabel => _hubConnection?.State switch
+    {
+        HubConnectionState.Connected => "Live",
+        HubConnectionState.Connecting or HubConnectionState.Reconnecting => "Connecting",
+        _ => "Offline"
+    };
+
+    private string ConnectionCss => _hubConnection?.State == HubConnectionState.Connected
+        ? "connection-live"
+        : "connection-offline";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reports.Clear();
+        _reports.AddRange(await ApiClient.GetReportsAsync());
+
+        var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "http://localhost:5138";
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(new Uri(new Uri(apiBaseUrl), "/hubs/reports"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hubConnection.On<ReportDto>("ReportSubmitted", UpsertReport);
+        _hubConnection.On<ReportDto>("ReportValidated", UpsertReport);
+        _hubConnection.Reconnecting += _ => InvokeAsync(StateHasChanged);
+        _hubConnection.Reconnected += _ => InvokeAsync(StateHasChanged);
+        _hubConnection.Closed += _ => InvokeAsync(StateHasChanged);
+
+        await _hubConnection.StartAsync();
+    }
+
+    private void UpsertReport(ReportDto report)
+    {
+        var index = _reports.FindIndex(existing => existing.Id == report.Id);
+        if (index >= 0)
+        {
+            _reports[index] = report;
+        }
+        else
+        {
+            _reports.Insert(0, report);
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static string Preview(string value)
+    {
+        const int maxLength = 180;
+        return value.Length <= maxLength ? value : $"{value[..maxLength]}...";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}

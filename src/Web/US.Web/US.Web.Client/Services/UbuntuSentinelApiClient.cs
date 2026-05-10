@@ -26,4 +26,13 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
         return await response.Content.ReadFromJsonAsync<ReportDto>(cancellationToken)
             ?? throw new InvalidOperationException("The API returned an empty report response.");
     }
+
+    public async Task<ReportDto> ValidateReportAsync(Guid reportId, ValidateReportRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PostAsJsonAsync($"/api/reports/{reportId}/validation", request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<ReportDto>(cancellationToken)
+            ?? throw new InvalidOperationException("The API returned an empty validation response.");
+    }
 }

@@ -5,6 +5,8 @@
 @using US.SharedKernel.Enums
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.OfflineReportQueue OfflineQueue
+@inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
 
 <PageTitle>Submit Report | Ubuntu Sentinel</PageTitle>
 
@@ -71,7 +73,8 @@
 
         <aside class="context-panel">
             <div class="sync-strip">
-                <span>@_pendingCount pending offline</span>
+                <span class="@(_isOnline ? "status-online" : "status-offline")">@(_isOnline ? "Online" : "Offline")</span>
+                <span>@_pendingCount pending</span>
                 <button type="button" @onclick="SyncPendingAsync" disabled="@(_isSyncing || _pendingCount == 0)">
                     @(_isSyncing ? "Syncing..." : "Sync")
                 </button>
@@ -134,9 +137,13 @@
     private ReportDto? _submittedReport;
     private bool _isSubmitting;
     private bool _isSyncing;
+    private bool _isOnline = true;
     private int _pendingCount;
     private string? _syncMessage;
     private string? _errorMessage;
+    private IJSObjectReference? _connectivityModule;
+    private IJSObjectReference? _connectivityRegistration;
+    private DotNetObjectReference<SubmitReport>? _dotNetReference;
 
     private RegionProfileDto? CurrentRegion =>
         _regions.FirstOrDefault(region => region.Code == _model.RegionCode);
@@ -162,6 +169,20 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _connectivityModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./connectivity.js");
+        _dotNetReference = DotNetObjectReference.Create(this);
+        _connectivityRegistration = await _connectivityModule.InvokeAsync<IJSObjectReference>("register", _dotNetReference);
+        _isOnline = await _connectivityModule.InvokeAsync<bool>("isOnline");
+        StateHasChanged();
+    }
+
     private async Task SubmitAsync()
     {
         _isSubmitting = true;
@@ -185,6 +206,19 @@
         {
             _isSubmitting = false;
         }
+    }
+
+    [JSInvokable]
+    public async Task NotifyOnlineStatusChanged(bool isOnline)
+    {
+        _isOnline = isOnline;
+
+        if (isOnline && _pendingCount > 0)
+        {
+            await SyncPendingAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SyncPendingAsync()
@@ -222,5 +256,21 @@
             IssueType.CommunityResilience => "Community resilience",
             _ => "Other"
         };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_connectivityRegistration is not null)
+        {
+            await _connectivityRegistration.InvokeVoidAsync("dispose");
+            await _connectivityRegistration.DisposeAsync();
+        }
+
+        if (_connectivityModule is not null)
+        {
+            await _connectivityModule.DisposeAsync();
+        }
+
+        _dotNetReference?.Dispose();
     }
 }

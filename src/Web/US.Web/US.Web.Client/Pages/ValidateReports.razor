@@ -1,0 +1,143 @@
+@page "/validate"
+@rendermode InteractiveWebAssembly
+@using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
+@inject Services.UbuntuSentinelApiClient ApiClient
+
+<PageTitle>Validate Reports | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell">
+    <section class="hero-band">
+        <p class="eyebrow">Human validation</p>
+        <h1>Review community reports before escalation</h1>
+        <p class="lede">AI can structure and summarize evidence, but validators decide what is approved, rejected, or sent for follow-up.</p>
+    </section>
+
+    <section class="validation-toolbar">
+        <button type="button" @onclick="LoadReportsAsync" disabled="@_isLoading">@(_isLoading ? "Refreshing..." : "Refresh")</button>
+        <span>@PendingReports.Count pending validation</span>
+    </section>
+
+    <section class="report-list">
+        @if (_isLoading)
+        {
+            <article class="empty-state">
+                <h2>Loading reports</h2>
+                <p>Fetching the latest validation queue.</p>
+            </article>
+        }
+        else if (PendingReports.Count == 0)
+        {
+            <article class="empty-state">
+                <h2>No pending reports</h2>
+                <p>New submissions will appear here for human review.</p>
+            </article>
+        }
+        else
+        {
+            @foreach (var report in PendingReports)
+            {
+                <article class="validation-card">
+                    <div class="validation-main">
+                        <p class="eyebrow">@report.RegionCode.ToUpperInvariant() · @report.IssueType · @report.Urgency</p>
+                        <h2>@report.Location.Name</h2>
+                        <p>@report.Description</p>
+                        <div class="validation-tags">
+                            @if (report.Actors.WomenLed)
+                            {
+                                <span>Women-led</span>
+                            }
+                            @if (report.Actors.YouthLed)
+                            {
+                                <span>Youth-led</span>
+                            }
+                            @if (report.IsSensitive)
+                            {
+                                <span>Sensitive</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="validation-actions">
+                        <label>
+                            Validator notes
+                            <textarea value="@GetNotes(report.Id)" @oninput="eventArgs => SetNotes(report.Id, eventArgs.Value?.ToString())" rows="4" placeholder="What should advocates or follow-up teams know?"></textarea>
+                        </label>
+                        <div class="button-row">
+                            <button type="button" class="approve" @onclick="() => DecideAsync(report.Id, ValidationDecision.Approve)">Approve</button>
+                            <button type="button" class="follow-up" @onclick="() => DecideAsync(report.Id, ValidationDecision.NeedsFollowUp)">Follow-up</button>
+                            <button type="button" class="reject" @onclick="() => DecideAsync(report.Id, ValidationDecision.Reject)">Reject</button>
+                        </div>
+                    </div>
+                </article>
+            }
+        }
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <section class="result-panel">@_message</section>
+    }
+</main>
+
+@code {
+    private readonly Dictionary<Guid, string?> _notes = [];
+    private IReadOnlyList<ReportDto> _reports = [];
+    private bool _isLoading;
+    private string? _message;
+
+    private List<ReportDto> PendingReports => _reports
+        .Where(report => report.Status == ReportStatus.PendingValidation)
+        .OrderByDescending(report => report.SubmittedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReportsAsync();
+    }
+
+    private async Task LoadReportsAsync()
+    {
+        _isLoading = true;
+        _message = null;
+
+        try
+        {
+            _reports = await ApiClient.GetReportsAsync();
+            foreach (var report in _reports)
+            {
+                _notes.TryAdd(report.Id, report.ValidatorNotes);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string? GetNotes(Guid reportId)
+    {
+        _notes.TryAdd(reportId, null);
+        return _notes[reportId];
+    }
+
+    private void SetNotes(Guid reportId, string? value)
+    {
+        _notes[reportId] = value;
+    }
+
+    private async Task DecideAsync(Guid reportId, ValidationDecision decision)
+    {
+        var updated = await ApiClient.ValidateReportAsync(reportId, new ValidateReportRequest
+        {
+            Decision = decision,
+            Notes = _notes.GetValueOrDefault(reportId)
+        });
+
+        _reports = _reports
+            .Select(report => report.Id == updated.Id ? updated : report)
+            .ToList();
+
+        _message = $"Report {updated.Id} marked as {updated.Status}.";
+    }
+}

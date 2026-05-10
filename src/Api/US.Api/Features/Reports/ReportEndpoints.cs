@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using US.Api.Features.Realtime;
 using US.SharedKernel.Contracts.Reports;
 
 namespace US.Api.Features.Reports;
@@ -13,9 +15,11 @@ public static class ReportEndpoints
         group.MapPost("/", async (
             [FromBody] SubmitReportRequest request,
             IReportStore store,
+            IHubContext<ReportHub> hubContext,
             CancellationToken cancellationToken) =>
         {
             var report = await store.CreateAsync(request, cancellationToken);
+            await hubContext.Clients.All.SendAsync("ReportSubmitted", report, cancellationToken);
             return Results.Created($"/api/reports/{report.Id}", report);
         });
 
@@ -35,10 +39,17 @@ public static class ReportEndpoints
             Guid id,
             [FromBody] ValidateReportRequest request,
             IReportStore store,
+            IHubContext<ReportHub> hubContext,
             CancellationToken cancellationToken) =>
         {
             var report = await store.UpdateValidationAsync(id, request.Decision, request.Notes, cancellationToken);
-            return report is null ? Results.NotFound() : Results.Ok(report);
+            if (report is null)
+            {
+                return Results.NotFound();
+            }
+
+            await hubContext.Clients.All.SendAsync("ReportValidated", report, cancellationToken);
+            return Results.Ok(report);
         });
 
         return endpoints;

@@ -1,5 +1,6 @@
 using US.Api.Features.Regions;
 using US.Api.Features.Reports;
+using US.Api.Features.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,13 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("BlazorClient", policy =>
     {
         policy.WithOrigins("http://localhost:5009", "https://localhost:7128")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 builder.Services.AddSingleton<IReportStore, InMemoryReportStore>();
@@ -36,5 +39,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapReportEndpoints();
 app.MapRegionEndpoints();
+app.MapHub<ReportHub>("/hubs/reports");
 
 app.Run();
