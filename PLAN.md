@@ -35,16 +35,17 @@ This is no longer a thin reporting MVP. The target is a prize-ready Andela x Ope
   - [ ] reporter status view
   - [ ] withdrawal/cancel before validation
 - [ ] Policy/RAG promise tracking:
-  - [ ] seeded policy/CDA documents
+  - [x] seeded policy/CDA documents
   - [ ] pgvector-ready abstraction
-  - [ ] deterministic semantic comparison fallback
-  - [ ] promise-delivery gap output
+  - [x] deterministic semantic comparison fallback
+  - [x] promise-delivery gap output
 - [ ] Four-agent Codex pipeline:
-  - [ ] evidence structuring
-  - [ ] policy RAG comparison
-  - [ ] safety and ethics review
-  - [ ] accountability brief generation
-  - [ ] visible pipeline page
+  - [x] evidence structuring
+  - [x] policy RAG comparison
+  - [x] safety and ethics review
+  - [x] accountability brief generation
+  - [x] visible pipeline page
+  - [x] live submission-to-pipeline feedback
 - [ ] Human validation:
   - [x] approve/follow-up/reject workflow foundation
   - [ ] consent/location/evidence/safety checks persisted
@@ -53,6 +54,7 @@ This is no longer a thin reporting MVP. The target is a prize-ready Andela x Ope
 - [ ] Dual-zone map:
   - [x] seeded conflict zones
   - [x] seeded resilience zones
+  - [x] Leaflet/OpenStreetMap tile layer
   - [ ] women-led/youth-led resilience signals
   - [ ] region filters
 - [ ] Accountability brief:

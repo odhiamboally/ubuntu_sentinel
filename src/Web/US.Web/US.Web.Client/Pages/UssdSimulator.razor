@@ -70,6 +70,12 @@
                            Color="Color.Primary">
                     Open reports
                 </MudButton>
+                <MudButton OnClick="@(() => Navigation.NavigateTo($"/reports/{_lastReportId}/pipeline"))"
+                           Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           Color="Color.Primary">
+                    View pipeline
+                </MudButton>
             }
         </article>
     </section>

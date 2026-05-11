@@ -1,0 +1,121 @@
+@page "/reports/{ReportId:guid}/pipeline"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
+@using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
+@inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.UiTextService Text
+@inject NavigationManager Navigation
+
+<PageTitle>Agent Pipeline | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell">
+    <MudButton OnClick="@(() => Navigation.NavigateTo("/reports"))" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">Back to reports</MudButton>
+
+    <section class="hero-band dashboard-hero">
+        <div>
+            <p class="eyebrow">Codex agentic pipeline</p>
+            <h1>Community testimony to accountability intelligence</h1>
+            <p class="lede">The report is structured, compared against seeded commitments, checked for safety, and drafted into an accountability brief for human validation.</p>
+        </div>
+        @if (_report is not null)
+        {
+            <MudButton OnClick="@(() => Navigation.NavigateTo($"/reports/{ReportId}/brief"))" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">Open brief</MudButton>
+        }
+    </section>
+
+    @if (_isLoading)
+    {
+        <section class="empty-state">
+            <h2>Running pipeline</h2>
+            <p>Preparing the four-agent accountability workflow.</p>
+        </section>
+    }
+    else if (_report is null || _result is null)
+    {
+        <section class="error-panel">Could not load the agent pipeline.</section>
+    }
+    else
+    {
+        <section class="pipeline-summary-grid">
+            <article class="metric-card">
+                <span>Report status</span>
+                <strong>@Text.Status(_report.LanguageCode, _report.Status)</strong>
+            </article>
+            <article class="metric-card">
+                <span>Issue</span>
+                <strong>@Text.IssueType(_report.LanguageCode, _result.IssueType)</strong>
+            </article>
+            <article class="metric-card">
+                <span>Confidence</span>
+                <strong>@_result.Confidence.ToString("0.00")</strong>
+            </article>
+            <article class="metric-card">
+                <span>Policy match</span>
+                <strong>@(_result.PolicyMatch?.Similarity.ToString("0.00") ?? "None")</strong>
+            </article>
+        </section>
+
+        @if (_result.PolicyMatch is not null)
+        {
+            <section class="policy-match-panel">
+                <p class="eyebrow">Seeded policy comparison</p>
+                <h2>@_result.PolicyMatch.DocumentTitle</h2>
+                <p>@_result.PolicyMatch.Commitment</p>
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true">
+                    @_result.PolicyMatch.Gap
+                </MudAlert>
+            </section>
+        }
+
+        <section class="agent-workflow">
+            @foreach (var step in _result.Steps.Select((value, index) => new { value, index }))
+            {
+                <article class="agent-workflow-step">
+                    <div class="agent-step-index">@(step.index + 1)</div>
+                    <div>
+                        <p class="eyebrow">@step.value.Name</p>
+                        <h2>@step.value.Purpose</h2>
+                        <p>@step.value.Output</p>
+                        <MudProgressLinear Value="@((double)(step.value.Confidence * 100))" Color="Color.Primary" Rounded="true" Size="Size.Small" />
+                        <span class="agent-confidence">Confidence @step.value.Confidence.ToString("0.00")</span>
+                    </div>
+                </article>
+            }
+        </section>
+
+        <section class="brief-panel">
+            <h2>Draft accountability intelligence</h2>
+            <h3>Summary</h3>
+            <p>@_result.Summary</p>
+            <h3>Gap analysis</h3>
+            <p>@_result.GapAnalysis</p>
+            <h3>Reparative proposal</h3>
+            <p>@_result.ReparativeProposal</p>
+        </section>
+    }
+</main>
+
+@code {
+    [Parameter]
+    public Guid ReportId { get; set; }
+
+    private ReportDto? _report;
+    private ReportPipelineResultDto? _result;
+    private bool _isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+
+        try
+        {
+            _report = await ApiClient.GetReportAsync(ReportId);
+            _result = await ApiClient.GetPipelineResultAsync(ReportId);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

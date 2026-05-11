@@ -68,7 +68,7 @@
                                          EditTooltip="@T("Common.Edit")"
                                          DeleteTooltip="@T("Common.Delete")"
                                          ExtraActions="@(new[] { BriefActionLabel(context) })"
-                                         OnView="@(() => ViewBrief(context.Id))"
+                                         OnView="@(() => ViewPipeline(context.Id))"
                                          OnEdit="@EditReportAsync"
                                          OnDelete="@(() => DeleteReportAsync(context.Id))"
                                          OnExtraAction="@((_) => ViewBrief(context.Id))" />
@@ -157,6 +157,11 @@
     }
 
     private string T(string key) => Text.Text(_language, key);
+
+    private void ViewPipeline(Guid reportId)
+    {
+        Navigation.NavigateTo($"/reports/{reportId}/pipeline");
+    }
 
     private void ViewBrief(Guid reportId)
     {

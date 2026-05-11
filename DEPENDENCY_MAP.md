@@ -81,6 +81,7 @@ flowchart TD
 
 - Existing report store still lives in API feature code.
 - PostgreSQL/pgvector-ready persistence is not implemented.
+- Seeded policy comparison is implemented as a deterministic RAG fallback.
 - USSD simulator is implemented as a foundation and needs polish/status tracking.
 - Dual-zone map is implemented as a seeded foundation and needs Leaflet/filters.
 - Role-shaped navigation is not implemented.

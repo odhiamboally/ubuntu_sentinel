@@ -20,6 +20,8 @@ Codex is being used as a senior engineering collaborator to:
 - scaffold clean architecture projects,
 - migrate existing code into stronger boundaries,
 - implement USSD, pipeline, map, validation, and brief slices,
+- connect successful submissions to visible pipeline feedback,
+- replace the conceptual map surface with Leaflet/OpenStreetMap markers for conflict and resilience zones,
 - maintain documentation as the strategy changes,
 - debug build/runtime issues,
 - keep demo reliability in mind.

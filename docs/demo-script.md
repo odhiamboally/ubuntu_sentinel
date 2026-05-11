@@ -20,9 +20,11 @@ Submit a resource justice scenario:
 Our village was promised a clean water point under the mining agreement, but nothing has been built. Families still pay for water and youth leaders have reported this several times.
 ```
 
+Show the success state and use **View pipeline** so the field intake visibly hands off to intelligence processing.
+
 ### 2. Agent Pipeline
 
-Open the pipeline view for the report.
+Open the pipeline view for the report, or submit through the web form and show the live pipeline feedback panel.
 
 Show:
 
@@ -70,6 +72,7 @@ Show:
 
 - red conflict zones,
 - green resilience zones,
+- OpenStreetMap geography,
 - women-led/youth-led peace signals.
 
 Script:

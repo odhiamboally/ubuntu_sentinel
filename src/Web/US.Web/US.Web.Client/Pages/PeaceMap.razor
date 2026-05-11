@@ -1,6 +1,8 @@
 @page "/map"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @layout ClientAppLayout
+@implements IAsyncDisposable
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Peace Map | Ubuntu Sentinel</PageTitle>
 
@@ -18,17 +20,7 @@
     </section>
 
     <section class="map-layout">
-        <article class="peace-map">
-            @foreach (var zone in _zones)
-            {
-                <button class="zone-marker @zone.CssClass"
-                        style="left:@zone.X%; top:@zone.Y%;"
-                        title="@zone.Name"
-                        @onclick="@(() => _selected = zone)">
-                    <span>@zone.Label</span>
-                </button>
-            }
-        </article>
+        <article id="@MapElementId" class="peace-map leaflet-peace-map"></article>
 
         <article class="context-panel">
             <p class="eyebrow">@_selected.Type</p>
@@ -47,19 +39,57 @@
 </main>
 
 @code {
+    private const string MapElementId = "peace-map-canvas";
     private ZoneView _selected = default!;
+    private IJSObjectReference? _mapModule;
+    private DotNetObjectReference<PeaceMap>? _dotNetReference;
 
     private readonly List<ZoneView> _zones =
     [
-        new("Conflict", "Sahel water commitment gap", "Sahel", "Broken promise", "3 community reports reference a delayed water point linked to a local development commitment.", "Mining/CDA promise tracking", 32, 34, "C", "conflict-zone"),
-        new("Resilience", "Women-led market mediation", "Sahel", "Mediation success", "Women mediators reopened a shared market route after farmer-herder tensions.", "Women-led peace infrastructure", 38, 42, "R", "resilience-zone"),
-        new("Conflict", "Eastern DRC extraction dispute", "Eastern DRC", "Resource conflict", "Reports describe extraction without clear community benefit delivery.", "Resource justice", 58, 58, "C", "conflict-zone"),
-        new("Resilience", "Youth early-warning circle", "Mozambique", "Community resilience", "Youth organizers coordinate alerts and safe routes during recovery periods.", "Youth-led resilience", 68, 72, "R", "resilience-zone")
+        new("Conflict", "Sahel water commitment gap", "Sahel", "Broken promise", "3 community reports reference a delayed water point linked to a local development commitment.", "Mining/CDA promise tracking", 14.5, -3.5, "C", "conflict-zone"),
+        new("Resilience", "Women-led market mediation", "Sahel", "Mediation success", "Women mediators reopened a shared market route after farmer-herder tensions.", "Women-led peace infrastructure", 13.8, -1.5, "R", "resilience-zone"),
+        new("Conflict", "Eastern DRC extraction dispute", "Eastern DRC", "Resource conflict", "Reports describe extraction without clear community benefit delivery.", "Resource justice", -1.6, 29.2, "C", "conflict-zone"),
+        new("Resilience", "Youth early-warning circle", "Mozambique", "Community resilience", "Youth organizers coordinate alerts and safe routes during recovery periods.", "Youth-led resilience", -18.7, 35.5, "R", "resilience-zone")
     ];
 
     protected override void OnInitialized()
     {
         _selected = _zones[0];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _dotNetReference = DotNetObjectReference.Create(this);
+        _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./peaceMap.js");
+        await _mapModule.InvokeVoidAsync("initializePeaceMap", MapElementId, _zones, _dotNetReference);
+    }
+
+    [JSInvokable]
+    public async Task SelectZone(int index)
+    {
+        if (index < 0 || index >= _zones.Count)
+        {
+            return;
+        }
+
+        _selected = _zones[index];
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_mapModule is not null)
+        {
+            await _mapModule.InvokeVoidAsync("disposePeaceMap", MapElementId);
+            await _mapModule.DisposeAsync();
+        }
+
+        _dotNetReference?.Dispose();
     }
 
     private sealed record ZoneView(
@@ -69,8 +99,8 @@
         string Evidence,
         string Summary,
         string Signal,
-        int X,
-        int Y,
+        double Latitude,
+        double Longitude,
         string Label,
         string CssClass);
 }

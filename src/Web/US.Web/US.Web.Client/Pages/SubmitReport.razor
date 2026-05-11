@@ -11,6 +11,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IJSRuntime JsRuntime
+@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
 <PageTitle>@T("Submit.Title") | Ubuntu Sentinel</PageTitle>
@@ -109,6 +110,66 @@
         </aside>
     </section>
 
+    @if (_lastSubmittedReport is not null || _isPipelineLoading)
+    {
+        <section class="live-pipeline-panel">
+            <div class="live-pipeline-header">
+                <div>
+                    <p class="eyebrow">Codex agentic pipeline</p>
+                    <h2>@(_isPipelineLoading ? "Transforming report into accountability intelligence" : "Pipeline ready for human validation")</h2>
+                    <p>@PipelineStatusText</p>
+                </div>
+                @if (_lastSubmittedReport is not null)
+                {
+                    <MudButton OnClick="@(() => Navigation.NavigateTo($"/reports/{_lastSubmittedReport.Id}/pipeline"))"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small">
+                        View pipeline
+                    </MudButton>
+                }
+            </div>
+
+            @if (_pipelinePreview is null)
+            {
+                <div class="agent-preview-grid">
+                    @foreach (var step in PreviewSteps)
+                    {
+                        <article class="agent-preview-card pending">
+                            <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Primary" />
+                            <div>
+                                <strong>@step.Title</strong>
+                                <span>@step.Description</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="agent-preview-grid">
+                    @foreach (var step in _pipelinePreview.Steps)
+                    {
+                        <article class="agent-preview-card complete">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                            <div>
+                                <strong>@step.Name</strong>
+                                <span>@step.Output</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+
+                @if (_pipelinePreview.PolicyMatch is not null)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="pipeline-alert">
+                        Matched @_pipelinePreview.PolicyMatch.DocumentTitle: @_pipelinePreview.PolicyMatch.Gap
+                    </MudAlert>
+                }
+            }
+        </section>
+    }
+
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
         <section class="error-panel">
@@ -130,11 +191,26 @@
     private bool _isSubmitting;
     private bool _isSyncing;
     private bool _isOnline = true;
+    private bool _isPipelineLoading;
     private int _pendingCount;
     private string? _errorMessage;
+    private ReportDto? _lastSubmittedReport;
+    private ReportPipelineResultDto? _pipelinePreview;
     private IJSObjectReference? _connectivityModule;
     private IJSObjectReference? _connectivityRegistration;
     private DotNetObjectReference<SubmitReport>? _dotNetReference;
+
+    private string PipelineStatusText => _pipelinePreview is null
+        ? "Structuring evidence, comparing policy commitments, checking safety, and preparing a draft brief."
+        : "Evidence is structured, policy comparison is visible, and validators can inspect the full pipeline.";
+
+    private static readonly IReadOnlyList<(string Title, string Description)> PreviewSteps =
+    [
+        ("Agent 1 - Evidence Structuring", "Extracting location, actors, issue type, and urgency."),
+        ("Agent 2 - Policy RAG Comparison", "Comparing testimony with seeded OSF-relevant commitments."),
+        ("Agent 3 - Safety and Ethics Review", "Checking consent, sensitivity, and escalation risk."),
+        ("Agent 4 - Accountability Brief Generation", "Drafting institution-ready accountability intelligence.")
+    ];
 
     private RegionProfileDto? CurrentRegion =>
         _regions.FirstOrDefault(region => region.Code == _model.RegionCode);
@@ -190,13 +266,17 @@
 
         try
         {
-            await ApiClient.SubmitReportAsync(_model);
+            var report = await ApiClient.SubmitReportAsync(_model);
             var languageCode = _model.LanguageCode;
             var successMessage = T("Submit.SuccessDetail");
             Snackbar.Add(T("Submit.Success"), Severity.Success);
+            _lastSubmittedReport = report;
+            _pipelinePreview = null;
+            _isPipelineLoading = true;
             _model = _model with { Description = string.Empty, LocationName = string.Empty };
             _isSubmitting = false;
             StateHasChanged();
+            var pipelineTask = LoadPipelinePreviewAsync(report.Id);
             await Task.Yield();
             await ShowFeedbackAsync(
                 Text.Text(languageCode, "Submit.SuccessTitle"),
@@ -204,6 +284,7 @@
                 Icons.Material.Filled.CheckCircle,
                 Color.Success,
                 Text.Text(languageCode, "Common.Ok"));
+            await pipelineTask;
         }
         catch
         {
@@ -226,6 +307,23 @@
         finally
         {
             _isSubmitting = false;
+        }
+    }
+
+    private async Task LoadPipelinePreviewAsync(Guid reportId)
+    {
+        try
+        {
+            _pipelinePreview = await ApiClient.GetPipelineResultAsync(reportId);
+        }
+        catch
+        {
+            _errorMessage = "The report was submitted, but the pipeline preview could not be loaded yet.";
+        }
+        finally
+        {
+            _isPipelineLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

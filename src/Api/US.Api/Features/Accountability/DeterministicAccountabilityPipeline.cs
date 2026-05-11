@@ -4,22 +4,26 @@ using US.SharedKernel.Enums;
 
 namespace US.Api.Features.Accountability;
 
-public sealed class DeterministicAccountabilityPipeline : IAccountabilityPipeline
+public sealed class DeterministicAccountabilityPipeline(IPolicyComparisonService policyComparison) : IAccountabilityPipeline
 {
     public Task<ReportPipelineResultDto> AnalyzeAsync(ReportDto report, CancellationToken cancellationToken)
     {
+        var policyMatch = policyComparison.FindBestMatch(report);
         var householdCount = InferHouseholds(report.Description);
         var daysOfHarm = InferDays(report.Description);
         var estimatedCost = householdCount * 2 * daysOfHarm;
-        var hasCommitment = !string.IsNullOrWhiteSpace(report.ReferencedCommitment)
+        var hasCommitment = policyMatch is not null
+            || !string.IsNullOrWhiteSpace(report.ReferencedCommitment)
             || report.Description.Contains("promised", StringComparison.OrdinalIgnoreCase)
             || report.Description.Contains("pledged", StringComparison.OrdinalIgnoreCase)
             || report.Description.Contains("agreement", StringComparison.OrdinalIgnoreCase)
             || report.Description.Contains("cda", StringComparison.OrdinalIgnoreCase);
 
         var summary = $"{report.Location.Name} submitted a {FormatIssueType(report.IssueType)} report with {report.Urgency.ToString().ToLowerInvariant()} urgency. The report is pending human validation before escalation.";
-        var gapAnalysis = hasCommitment
-            ? "The report appears to describe a gap between a stated commitment and the observed community reality. A human validator should confirm the exact clause, responsible actor, deadline, and current evidence."
+        var gapAnalysis = policyMatch is not null
+            ? policyMatch.Gap
+            : hasCommitment
+                ? "The report appears to describe a gap between a stated commitment and the observed community reality. A human validator should confirm the exact clause, responsible actor, deadline, and current evidence."
             : "The report does not clearly identify a verifiable commitment yet. A validator should request the agreement, policy, promise, or public commitment that anchors the accountability claim.";
 
         var reparativeProposal = report.IssueType switch
@@ -39,46 +43,53 @@ public sealed class DeterministicAccountabilityPipeline : IAccountabilityPipelin
             Summary = summary,
             GapAnalysis = gapAnalysis,
             ReparativeProposal = reparativeProposal,
-            AccountabilityBriefMarkdown = BuildBrief(report, summary, gapAnalysis, reparativeProposal),
+            AccountabilityBriefMarkdown = BuildBrief(report, summary, gapAnalysis, reparativeProposal, policyMatch),
+            PolicyMatch = policyMatch,
             Steps =
             [
                 new PipelineStepDto
                 {
-                    Name = "Validation Agent",
-                    Purpose = "Structure the raw community report and identify basic confidence signals.",
+                    Name = "Agent 1 - Evidence Structuring",
+                    Purpose = "Convert raw community testimony into a structured intelligence record.",
                     Output = $"Classified as {FormatIssueType(report.IssueType)} with {report.Urgency.ToString().ToLowerInvariant()} urgency and {report.Location.Confidence.ToString().ToLowerInvariant()} location confidence.",
                     Confidence = 0.72m
                 },
                 new PipelineStepDto
                 {
-                    Name = "Document Intelligence Agent",
-                    Purpose = "Compare the report against seeded commitments or policy language.",
-                    Output = hasCommitment
-                        ? "Potential commitment reference detected; demo seed clause should be verified by a human reviewer."
+                    Name = "Agent 2 - Policy RAG Comparison",
+                    Purpose = "Compare the report against seeded agreements, commitments, and regional frameworks.",
+                    Output = policyMatch is not null
+                        ? $"Matched {policyMatch.DocumentTitle} ({policyMatch.Similarity:0.00} similarity). Gap: {policyMatch.Gap}"
+                        : hasCommitment
+                            ? "Potential commitment reference detected; human reviewer should attach the exact document."
                         : "No clear commitment reference detected; report needs follow-up evidence before escalation.",
-                    Confidence = hasCommitment ? 0.70m : 0.48m
+                    Confidence = policyMatch?.Similarity ?? (hasCommitment ? 0.70m : 0.48m)
                 },
                 new PipelineStepDto
                 {
-                    Name = "Reparative Justice Calculator",
-                    Purpose = "Translate harm signals into concrete, community-validated repair options.",
-                    Output = reparativeProposal,
-                    Confidence = 0.64m
+                    Name = "Agent 3 - Safety and Ethics Review",
+                    Purpose = "Check sensitivity, consent requirements, and whether escalation could expose the reporter or community.",
+                    Output = report.IsSensitive
+                        ? "Sensitive handling required. Validator must confirm consent and anonymization before escalation."
+                        : "No sensitivity flag was selected. Validator still confirms consent, location confidence, evidence quality, and reporter safety.",
+                    Confidence = report.IsSensitive ? 0.69m : 0.76m
                 },
                 new PipelineStepDto
                 {
-                    Name = "Advocacy Drafter",
-                    Purpose = "Generate a concise accountability brief for validator review.",
-                    Output = "Drafted export-ready markdown with evidence, gap analysis, proposal, next steps, and Ubuntu principle.",
+                    Name = "Agent 4 - Accountability Brief Generation",
+                    Purpose = "Generate a validation-gated accountability brief for advocates and OSF partners.",
+                    Output = $"Drafted brief with gap analysis and reparative proposal: {reparativeProposal}",
                     Confidence = 0.76m
                 }
             ],
             Flags = BuildFlags(report, hasCommitment),
-            Citations = hasCommitment ? ["Seed CDA demo clause: Section 4.2 - community water access commitment"] : []
+            Citations = policyMatch is not null
+                ? [$"{policyMatch.DocumentTitle}: {policyMatch.Commitment}"]
+                : hasCommitment ? ["Seed CDA demo clause: Section 4.2 - community water access commitment"] : []
         });
     }
 
-    private static string BuildBrief(ReportDto report, string summary, string gapAnalysis, string reparativeProposal)
+    private static string BuildBrief(ReportDto report, string summary, string gapAnalysis, string reparativeProposal, PolicyMatchDto? policyMatch)
     {
         return $"""
         # Accountability Brief: {report.Location.Name}
@@ -98,7 +109,8 @@ public sealed class DeterministicAccountabilityPipeline : IAccountabilityPipelin
         - **Trust Score**: {report.TrustScore.Overall:0.00}/1.0 ({report.TrustScore.InternalConsistency})
 
         ## 3. Policy/Agreement Reference
-        - **Relevant Clause**: Demo seed commitment, pending human verification
+        - **Document**: {policyMatch?.DocumentTitle ?? "Pending document attachment"}
+        - **Relevant Clause**: {policyMatch?.Commitment ?? "Demo seed commitment, pending human verification"}
         - **Contradiction**: {gapAnalysis}
 
         ## 4. Harm Assessment

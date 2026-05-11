@@ -21,7 +21,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("BlazorClient", policy =>
     {
-        policy.WithOrigins("http://localhost:5009", "https://localhost:7128")
+        policy.WithOrigins(
+                "http://localhost:5009",
+                "https://localhost:7128",
+                "http://127.0.0.1:5009",
+                "https://127.0.0.1:7128")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -29,6 +33,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddSingleton<IReportStore, InMemoryReportStore>();
 builder.Services.AddSingleton<IRegionProfileStore, RegionProfileStore>();
+builder.Services.AddSingleton<IPolicyComparisonService, SeededPolicyComparisonService>();
 builder.Services.AddSingleton<IAccountabilityPipeline, DeterministicAccountabilityPipeline>();
 builder.Services.AddSingleton<UssdSessionStore>();
 
@@ -40,7 +45,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("BlazorClient");
 
 app.UseAuthorization();
