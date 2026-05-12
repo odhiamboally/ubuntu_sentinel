@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using QuestPDF.Infrastructure;
 using US.Api.Features.Accountability;
 using US.Api.Features.Auth;
 using US.Api.Features.Intake;
@@ -8,6 +9,7 @@ using US.Api.Features.Realtime;
 using US.SharedKernel.Inference;
 
 var builder = WebApplication.CreateBuilder(args);
+QuestPDF.Settings.License = LicenseType.Community;
 
 // Add services to the container.
 
@@ -46,6 +48,7 @@ builder.Services.Configure<OpenAiPipelineOptions>(options =>
 builder.Services.AddHttpClient<OpenAiChatJsonClient>();
 builder.Services.AddSingleton<DeterministicAccountabilityPipeline>();
 builder.Services.AddSingleton<IAccountabilityPipeline, OpenAiAccountabilityPipeline>();
+builder.Services.AddSingleton<IBriefPdfRenderer, QuestPdfBriefRenderer>();
 builder.Services.AddSingleton<UssdSessionStore>();
 
 var app = builder.Build();
@@ -76,6 +79,7 @@ app.MapGet("/", () => Results.Ok(new
         "/api/reports",
         "/api/intake/ussd",
         "/api/reports/{id}/pipeline",
+        "/api/reports/{id}/brief.pdf",
         "/api/policy-documents",
         "/hubs/reports"
     }
