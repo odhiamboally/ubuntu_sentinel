@@ -30,7 +30,7 @@ public static class UssdEndpoints
         CancellationToken cancellationToken)
     {
         var steps = request.Text.Split('*', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var sessionId = string.IsNullOrWhiteSpace(request.SessionId) ? Guid.NewGuid().ToString("N") : request.SessionId;
+        var sessionId = string.IsNullOrWhiteSpace(request.SessionId) ? Guid.CreateVersion7().ToString("N") : request.SessionId;
 
         if (steps.Length == 0)
         {

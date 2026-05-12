@@ -75,8 +75,8 @@ Build Ubuntu Sentinel as a serious PeaceTech product demo: community intelligenc
   - [x] follow-up brief state
   - [x] rejection/internal record state
   - [x] validator notes included
-  - [ ] PDF export through HTML print fallback or QuestPDF
-  - [ ] JSON output for partner systems
+  - [x] print-ready HTML PDF fallback
+  - [x] JSON output for partner systems
 - [ ] Role-gated navigation:
   - [ ] Reporter
   - [ ] Community Validator
@@ -93,16 +93,14 @@ Build Ubuntu Sentinel as a serious PeaceTech product demo: community intelligenc
   - [x] Codex usage explanation foundation
   - [x] architecture guardrails
   - [x] maturity backlog
-  - [ ] final demo readiness checklist
-  - [ ] PDF export demo path
+  - [x] final demo readiness checklist
+  - [x] PDF export demo path
 
 ## Immediate Next Slices
 
-1. Update docs to current strategy and workflow.
-2. Add PDF export via print-ready HTML fallback.
-3. Add demo readiness checklist and Codex collaboration narrative.
-4. Add validator notification foundation if time permits.
-5. Final browser demo pass.
+1. Add validator notification foundation if time permits.
+2. Final localization/browser demo pass.
+3. Add role-gated demo shell if it can be done safely.
 
 ## Explicit Phase 2
 

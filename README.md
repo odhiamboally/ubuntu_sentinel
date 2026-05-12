@@ -43,11 +43,13 @@ Implemented:
 - Human validation workflow with mandatory notes.
 - Read-only report view and explicit validation action.
 - Status-aware briefs: draft, follow-up, rejection/internal record, validation-backed.
+- Print-ready brief export for browser Save as PDF.
+- Partner-system JSON brief export.
 - Dual conflict/resilience map with OpenStreetMap.
 
 Still open:
 
-- PDF export.
+- Server-side PDF generation.
 - Role-gated navigation.
 - Validator notifications.
 - PostgreSQL/pgvector persistence.

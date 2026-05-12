@@ -33,7 +33,7 @@ These belong in `PLAN.md`, not here:
 | Region context CRUD administration | Demo uses versioned JSON region profiles; production should persist regions, bodies, pathways, languages, priority issue types, and related policy sources in EF/PostgreSQL with admin screens and audit history. |
 | Real USSD short code | Demo uses a USSD simulator and webhook-shaped endpoint; production short codes require carrier/Africa's Talking approval and country-specific setup. |
 | Production notification gateways | Demo can use an outbox/logged notification foundation; production should wire SMS/email/WhatsApp delivery with templates, retries, opt-in rules, and audit trails. |
-| Server-side PDF generation with QuestPDF | Demo can use print-ready HTML/PDF fallback; production should generate durable PDFs server-side with templates, signatures, and audit metadata. |
+| Server-side PDF generation with QuestPDF | Demo uses print-ready HTML/PDF fallback; production should generate durable PDFs server-side with templates, signatures, and audit metadata. |
 | Branch protection and PR governance | During the demo sprint, direct main work is acceptable for speed. Production should require protected branches, PR review, build checks, and architecture/test gates. |
 | WhatsApp full conversation flow | Mention as future channel; build USSD/SMS-style flow first. |
 | Multi-tenant regional deployment | Important for OSF scale, not needed for local showcase. |

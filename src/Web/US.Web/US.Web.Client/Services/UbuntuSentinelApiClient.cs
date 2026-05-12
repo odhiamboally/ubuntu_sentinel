@@ -68,6 +68,11 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
             ?? throw new InvalidOperationException("The API returned an empty pipeline response.");
     }
 
+    public string GetBriefJsonUrl(Guid reportId)
+    {
+        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json").ToString();
+    }
+
     public async Task DeleteReportAsync(Guid reportId, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.DeleteAsync($"/api/reports/{reportId}", cancellationToken);

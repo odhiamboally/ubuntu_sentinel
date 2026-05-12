@@ -25,6 +25,8 @@
 - [ ] Pipeline shows fallback/OpenAI mode.
 - [ ] Pipeline shows sourced clause comparison.
 - [ ] Brief is status-aware.
+- [ ] Brief Print / Save PDF action opens the browser print flow.
+- [ ] Brief Export JSON downloads partner-system payload.
 - [ ] Map shows conflict and resilience layers.
 
 ## Suggested Demo Data

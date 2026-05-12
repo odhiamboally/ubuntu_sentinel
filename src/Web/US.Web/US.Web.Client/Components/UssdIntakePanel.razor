@@ -48,7 +48,7 @@
     [Parameter]
     public string RegionCode { get; set; } = "sahel";
 
-    private string _sessionId = Guid.NewGuid().ToString("N");
+    private string _sessionId = Guid.CreateVersion7().ToString("N");
     private string _phoneNumber = "+254700123456";
     private string _input = string.Empty;
     private string _path = string.Empty;
@@ -68,7 +68,7 @@
 
     private async Task StartAsync()
     {
-        _sessionId = Guid.NewGuid().ToString("N");
+        _sessionId = Guid.CreateVersion7().ToString("N");
         _path = string.Empty;
         _input = string.Empty;
         _isTerminal = false;
@@ -132,7 +132,7 @@
 
     private void Reset()
     {
-        _sessionId = Guid.NewGuid().ToString("N");
+        _sessionId = Guid.CreateVersion7().ToString("N");
         _input = string.Empty;
         _path = string.Empty;
         _screenText = T("Ussd.InitialScreen");

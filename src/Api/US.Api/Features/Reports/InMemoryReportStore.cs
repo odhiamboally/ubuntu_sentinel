@@ -17,7 +17,7 @@ public sealed class InMemoryReportStore(IssueTypeInferenceService issueTypeInfer
 
         var report = new ReportDto
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             Description = request.Description.Trim(),
             Location = new LocationDto
             {

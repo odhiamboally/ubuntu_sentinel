@@ -1154,6 +1154,14 @@ h1 {
     gap: 1rem;
 }
 
+.brief-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+
 .brief-panel {
     border: 1px solid #dde5dc;
     border-radius: 8px;
@@ -1803,4 +1811,98 @@ h1 {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+@media print {
+    @page {
+        margin: 14mm;
+    }
+
+    html,
+    body {
+        color: #111;
+        background: #fff !important;
+        font-size: 11pt;
+    }
+
+    .no-print,
+    .topbar,
+    .mud-popover-provider,
+    .mud-dialog-container,
+    .mud-snackbar-location,
+    .mud-tooltip {
+        display: none !important;
+    }
+
+    .page-shell {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .hero-band,
+    .brief-panel,
+    .brief-status-card,
+    .safety-note,
+    .pipeline-alert {
+        break-inside: avoid;
+        box-shadow: none !important;
+    }
+
+    .hero-band {
+        padding: 0 0 8mm !important;
+    }
+
+    .hero-band h1 {
+        font-size: 20pt !important;
+        line-height: 1.15 !important;
+    }
+
+    .lede,
+    .brief-panel p,
+    .validation-gate-panel p:last-child {
+        color: #222 !important;
+    }
+
+    .brief-status-card {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        border-color: #bbb !important;
+        padding: 4mm !important;
+    }
+
+    .brief-status-card .mud-chip,
+    .validation-gate-checks .mud-chip {
+        border: 1px solid #777 !important;
+        color: #111 !important;
+        background: #fff !important;
+    }
+
+    .brief-status-card .mud-chip-content,
+    .validation-gate-checks .mud-chip-content {
+        color: #111 !important;
+    }
+
+    .brief-panel {
+        border-color: #bbb !important;
+        padding: 5mm !important;
+        background: #fff !important;
+    }
+
+    .brief-panel pre {
+        max-height: none !important;
+        overflow: visible !important;
+        border: 1px solid #bbb !important;
+        color: #111 !important;
+        background: #fff !important;
+        font-size: 10pt !important;
+        white-space: pre-wrap !important;
+    }
+
+    .safety-note,
+    .pipeline-alert {
+        border-color: #999 !important;
+        color: #111 !important;
+        background: #fff !important;
+    }
 }
