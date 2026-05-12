@@ -33,7 +33,7 @@ These belong in `PLAN.md`, not here:
 | Region context CRUD administration | Demo uses versioned JSON region profiles; production should persist regions, bodies, pathways, languages, priority issue types, and related policy sources in EF/PostgreSQL with admin screens and audit history. |
 | Real USSD short code | Demo uses a USSD simulator and webhook-shaped endpoint; production short codes require carrier/Africa's Talking approval and country-specific setup. |
 | Production notification gateways | Demo can use an outbox/logged notification foundation; production should wire SMS/email/WhatsApp delivery with templates, retries, opt-in rules, and audit trails. |
-| Server-side PDF generation with QuestPDF | Demo uses print-ready HTML/PDF fallback; production should generate durable PDFs server-side with templates, signatures, and audit metadata. |
+| Durable signed PDF archival | Demo now generates structured QuestPDF briefs server-side; production should add signatures, audit metadata, and long-term archival workflows. |
 | Branch protection and PR governance | During the demo sprint, direct main work is acceptable for speed. Production should require protected branches, PR review, build checks, and architecture/test gates. |
 | Production auth/IAM | Demo uses seeded username/password staff login and anonymous reporters. Production needs ASP.NET Identity or equivalent, token/cookie hardening, authorization policies, audit trails, and reporter-safe anonymous claim recovery. |
 | PostgreSQL persistence | Demo persists reports to a local JSON file to speed testing. Production should promote reports, users, roles, policy documents, validator assignments, and audit logs to PostgreSQL/EF Core. |

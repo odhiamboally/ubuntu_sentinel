@@ -74,6 +74,11 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
         return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json").ToString();
     }
 
+    public string GetBriefPdfUrl(Guid reportId)
+    {
+        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.pdf").ToString();
+    }
+
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         var response = await httpClient.PostAsJsonAsync("/api/auth/login", request, JsonOptions, cancellationToken);

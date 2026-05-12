@@ -59,13 +59,13 @@ Implemented:
 - Read-only report view and explicit validation action.
 - Status-aware briefs: draft, follow-up, rejection/internal record, validation-backed.
 - Admin-only pipeline and brief diagnostics.
-- Print-ready brief export for browser Save as PDF.
+- Server-side QuestPDF brief export.
 - Partner-system JSON brief export.
 - Dual conflict/resilience map with OpenStreetMap.
 
 Still open:
 
-- Server-side PDF generation.
+- Durable PDF signatures/audit metadata.
 - Production ASP.NET Identity/IAM.
 - PostgreSQL-backed persistence.
 - Validator notifications.

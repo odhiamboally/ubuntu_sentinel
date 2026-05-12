@@ -28,7 +28,7 @@
             <p class="lede">@BriefLede</p>
         </div>
         <div class="brief-export-actions no-print">
-            <MudButton OnClick="PrintBriefAsync" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
+            <MudButton Href="@BriefPdfUrl" Target="_blank" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
                 @T("Brief.PrintPdf")
             </MudButton>
 
@@ -205,6 +205,7 @@
     private bool _isLoading = true;
 
     private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId);
+    private string BriefPdfUrl => ApiClient.GetBriefPdfUrl(ReportId);
     private bool IsAdminView => Roles.IsAdmin;
 
     private bool IsValidationBacked =>
@@ -299,11 +300,6 @@
         UrgencyLevel.Low => Color.Success,
         _ => Color.Info
     };
-
-    private async Task PrintBriefAsync()
-    {
-        await Js.InvokeVoidAsync("print");
-    }
 
     private IReadOnlyList<BriefLine> BriefLines =>
         ParseBrief(_result?.AccountabilityBriefMarkdown ?? string.Empty);
