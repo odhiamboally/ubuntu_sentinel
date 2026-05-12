@@ -217,6 +217,11 @@
         _dotNetReference = DotNetObjectReference.Create(this);
         _connectivityRegistration = await _connectivityModule.InvokeAsync<IJSObjectReference>("register", _dotNetReference);
         _isOnline = await _connectivityModule.InvokeAsync<bool>("isOnline");
+        if (_isOnline && _pendingCount > 0)
+        {
+            await SyncPendingAsync(showFeedbackDialog: false);
+        }
+
         StateHasChanged();
     }
 
@@ -285,13 +290,13 @@
 
         if (isOnline && _pendingCount > 0)
         {
-            await SyncPendingAsync();
+            await SyncPendingAsync(showFeedbackDialog: false);
         }
 
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task SyncPendingAsync()
+    private async Task SyncPendingAsync(bool showFeedbackDialog = true)
     {
         _errorMessage = null;
 
@@ -303,7 +308,10 @@
                 ? Text.Format(_model.LanguageCode, "Submit.SyncedAll", result.Synced)
                 : Text.Format(_model.LanguageCode, "Submit.SyncedSome", result.Synced, result.Attempted, result.Remaining);
             Snackbar.Add(syncMessage, result.Remaining == 0 ? Severity.Success : Severity.Warning);
-            await ShowFeedbackAsync(T("Submit.SyncTitle"), syncMessage, Icons.Material.Filled.Sync, Color.Success, T("Common.Ok"));
+            if (showFeedbackDialog)
+            {
+                await ShowFeedbackAsync(T("Submit.SyncTitle"), syncMessage, Icons.Material.Filled.Sync, Color.Success, T("Common.Ok"));
+            }
         }
         catch
         {

@@ -135,6 +135,11 @@
         _dotNetReference = DotNetObjectReference.Create(this);
         _connectivityRegistration = await _connectivityModule.InvokeAsync<IJSObjectReference>("register", _dotNetReference);
         _isOnline = await _connectivityModule.InvokeAsync<bool>("isOnline");
+        if (_isOnline && _pendingCount > 0)
+        {
+            await SyncPendingAsync();
+        }
+
         await InvokeAsync(StateHasChanged);
     }
 
