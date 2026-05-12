@@ -1,4 +1,4 @@
-# Ubuntu Sentinel
+<h1><span style="color:#c62828;">Ubuntu Sentinel</span></h1>
 
 Ubuntu Sentinel is community intelligence infrastructure for transformative peace. It helps conflict-affected communities submit evidence through low-bandwidth channels, validate it locally, compare it against public commitments, and generate accountability outputs that keep communities in control.
 
@@ -21,6 +21,18 @@ Ubuntu Sentinel is not a dashboard for OSF staff to read community reports. It i
 - Dual conflict/resilience map.
 - Role-shaped views: Reporter, Community Validator, Advocate, OSF Partner.
 - EN/FR localization.
+
+## Operating Constraints
+
+**Displaced populations:** Ubuntu Sentinel does not require app installation, a fixed address, or a stable location. Communities can submit through the web flow or the USSD-style intake simulator, and the design supports trusted validators/facilitators reviewing and validating reports for people moving through unstable conditions.
+
+**Low bandwidth:** The solution is explicitly built for low-connectivity environments. It includes a USSD-shaped intake flow and a browser offline queue that stores reports locally and syncs them when connectivity returns.
+
+**Secure access / anonymity:** The current implementation does not require mandatory PII fields in the report flow, supports sensitive/anonymized submissions, hides sensitive details in shared views until consent and reporter safety are confirmed, and keeps escalation behind a human validation gate with mandatory notes.
+
+**Multilingual:** The judge-facing flow has working English and French localization today, and the intake pipeline accepts community testimony as free text rather than forcing a rigid language-specific form structure. Arabic and Portuguese are not yet fully localized in the UI and remain part of the next-phase roadmap.
+
+**Adaptability:** The solution is designed to be re-used across geographies through configurable region profiles, policy-source data, issue taxonomies, escalation pathways, and seeded regional contexts. The current demo already spans Eastern DRC, Sahel, Sudan, and Mozambique without requiring separate applications.
 
 ## Current State
 
