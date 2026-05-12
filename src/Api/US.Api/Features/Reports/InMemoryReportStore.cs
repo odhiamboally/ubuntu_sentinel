@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using US.SharedKernel.Contracts.Reports;
 using US.SharedKernel.Enums;
 using US.SharedKernel.Inference;
@@ -7,10 +9,21 @@ namespace US.Api.Features.Reports;
 
 public sealed class InMemoryReportStore(IssueTypeInferenceService issueTypeInference) : IReportStore
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     private readonly ConcurrentDictionary<Guid, ReportDto> _reports = new();
+    private readonly SemaphoreSlim _fileLock = new(1, 1);
+    private readonly string _storePath = Path.Combine(AppContext.BaseDirectory, "data", "reports.json");
+    private bool _loaded;
 
     public Task<ReportDto> CreateAsync(SubmitReportRequest request, CancellationToken cancellationToken)
     {
+        EnsureLoaded();
+
         var inference = issueTypeInference.Infer(request.Description);
         var userSelectedIssueType = request.IssueTypeHint is null or IssueType.Other ? null : request.IssueTypeHint;
         var issueType = ResolveIssueType(userSelectedIssueType, inference);
@@ -47,6 +60,7 @@ public sealed class InMemoryReportStore(IssueTypeInferenceService issueTypeInfer
         };
 
         _reports[report.Id] = report;
+        Persist();
         return Task.FromResult(report);
     }
 
@@ -72,6 +86,8 @@ public sealed class InMemoryReportStore(IssueTypeInferenceService issueTypeInfer
 
     public Task<IReadOnlyList<ReportDto>> GetAllAsync(CancellationToken cancellationToken)
     {
+        EnsureLoaded();
+
         var reports = _reports.Values
             .OrderByDescending(report => report.SubmittedAt)
             .ToList();
@@ -81,12 +97,16 @@ public sealed class InMemoryReportStore(IssueTypeInferenceService issueTypeInfer
 
     public Task<ReportDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
+        EnsureLoaded();
+
         _reports.TryGetValue(id, out var report);
         return Task.FromResult(report);
     }
 
     public Task<ReportDto?> UpdateValidationAsync(Guid id, ValidateReportRequest request, CancellationToken cancellationToken)
     {
+        EnsureLoaded();
+
         if (!_reports.TryGetValue(id, out var report))
         {
             return Task.FromResult<ReportDto?>(null);
@@ -112,12 +132,73 @@ public sealed class InMemoryReportStore(IssueTypeInferenceService issueTypeInfer
         };
 
         _reports[id] = updated;
+        Persist();
         return Task.FromResult<ReportDto?>(updated);
     }
 
     public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        return Task.FromResult(_reports.TryRemove(id, out _));
+        EnsureLoaded();
+
+        var deleted = _reports.TryRemove(id, out _);
+        if (deleted)
+        {
+            Persist();
+        }
+
+        return Task.FromResult(deleted);
+    }
+
+    private void EnsureLoaded()
+    {
+        if (_loaded)
+        {
+            return;
+        }
+
+        _fileLock.Wait();
+        try
+        {
+            if (_loaded)
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(_storePath)!);
+
+            if (File.Exists(_storePath))
+            {
+                var json = File.ReadAllText(_storePath);
+                var reports = JsonSerializer.Deserialize<List<ReportDto>>(json, JsonOptions) ?? [];
+                foreach (var report in reports)
+                {
+                    _reports[report.Id] = report;
+                }
+            }
+
+            _loaded = true;
+        }
+        finally
+        {
+            _fileLock.Release();
+        }
+    }
+
+    private void Persist()
+    {
+        _fileLock.Wait();
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_storePath)!);
+            var reports = _reports.Values
+                .OrderByDescending(report => report.SubmittedAt)
+                .ToList();
+            File.WriteAllText(_storePath, JsonSerializer.Serialize(reports, JsonOptions));
+        }
+        finally
+        {
+            _fileLock.Release();
+        }
     }
 
     private static UrgencyLevel InferUrgency(string description)

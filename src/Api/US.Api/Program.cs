@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using US.Api.Features.Accountability;
+using US.Api.Features.Auth;
 using US.Api.Features.Intake;
 using US.Api.Features.Regions;
 using US.Api.Features.Reports;
@@ -85,6 +86,7 @@ app.MapReportEndpoints();
 app.MapRegionEndpoints();
 app.MapAccountabilityEndpoints();
 app.MapUssdEndpoints();
+app.MapAuthEndpoints();
 app.MapHub<ReportHub>("/hubs/reports");
 
 app.Run();

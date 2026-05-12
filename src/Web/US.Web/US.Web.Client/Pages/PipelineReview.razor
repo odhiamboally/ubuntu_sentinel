@@ -5,7 +5,9 @@
 @using US.SharedKernel.Enums
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
+@inject Services.AppRoleService Roles
 @inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
 
 <PageTitle>@T("Pipeline.PageTitle") | Ubuntu Sentinel</PageTitle>
 
@@ -182,6 +184,13 @@
 
         try
         {
+            await Roles.InitializeAsync(JsRuntime);
+            if (!Roles.IsAdmin)
+            {
+                Navigation.NavigateTo("/reports");
+                return;
+            }
+
             _report = await ApiClient.GetReportAsync(ReportId);
             _result = await ApiClient.GetPipelineResultAsync(ReportId);
         }

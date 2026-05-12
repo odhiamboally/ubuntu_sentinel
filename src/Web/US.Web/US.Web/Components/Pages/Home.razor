@@ -3,6 +3,11 @@
 <PageTitle>Ubuntu Sentinel</PageTitle>
 
 <main class="landing-shell">
+    <header class="landing-header">
+        <a href="/" class="landing-brand">Ubuntu Sentinel</a>
+        <a href="/login" class="landing-staff-login">Staff login</a>
+    </header>
+
     <section class="landing-hero">
         <p class="eyebrow">Ubuntu Sentinel</p>
         <h1>Community intelligence for accountable peace</h1>
@@ -45,6 +50,6 @@
 <script>
     function setUbuntuLanguage(language) {
         localStorage.setItem('ubuntu-sentinel-language', language);
-        window.location.href = '/dashboard';
+        window.location.href = '/submit';
     }
 </script>

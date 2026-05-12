@@ -11,6 +11,8 @@
 ## Demo Path
 
 - [ ] Landing page language selection works.
+- [ ] Staff login works: `validator` / `Validator123!`.
+- [ ] Admin login works: `admin` / `Admin123!`.
 - [ ] Submit page uses selected language.
 - [ ] USSD simulator uses selected language and does not force language by region.
 - [ ] Web report submission succeeds.
@@ -25,6 +27,8 @@
 - [ ] Pipeline shows fallback/OpenAI mode.
 - [ ] Pipeline shows sourced clause comparison.
 - [ ] Brief is status-aware.
+- [ ] Validator role sees brief content without admin diagnostics.
+- [ ] Admin role can inspect pipeline/brief diagnostics.
 - [ ] Brief Print / Save PDF action opens the browser print flow.
 - [ ] Brief Export JSON downloads partner-system payload.
 - [ ] Map shows conflict and resilience layers.

@@ -13,6 +13,7 @@ builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseUr
 builder.Services.AddScoped<UbuntuSentinelApiClient>();
 builder.Services.AddScoped<OfflineReportQueue>();
 builder.Services.AddScoped<AppLanguageService>();
+builder.Services.AddScoped<AppRoleService>();
 builder.Services.AddSingleton<UiTextService>();
 builder.Services.AddSingleton<IssueTypeInferenceService>();
 builder.Services.AddMudServices();

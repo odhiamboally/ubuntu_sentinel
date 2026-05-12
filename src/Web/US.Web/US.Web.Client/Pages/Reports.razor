@@ -8,6 +8,7 @@
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
 @inject Services.AppLanguageService Language
+@inject Services.AppRoleService Roles
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -102,8 +103,16 @@
     protected override async Task OnInitializedAsync()
     {
         await Language.InitializeAsync(JsRuntime);
+        await Roles.InitializeAsync(JsRuntime);
+        if (Roles.IsReporter)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
         _language = Language.CurrentLanguage;
         Language.LanguageChanged += HandleLanguageChanged;
+        Roles.RoleChanged += HandleRoleChanged;
 
         _reports.Clear();
         _reports.AddRange(await ApiClient.GetReportsAsync());
@@ -182,6 +191,11 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
+    private void HandleRoleChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     private void ViewPipeline(Guid reportId)
     {
         Navigation.NavigateTo($"/reports/{reportId}/pipeline");
@@ -208,13 +222,18 @@
             actions.Add(T("Reports.Validate"));
         }
 
-        actions.Add(T("Reports.ViewPipeline"));
+        if (Roles.IsAdmin)
+        {
+            actions.Add(T("Reports.ViewPipeline"));
+        }
+
         actions.Add(BriefActionLabel(report));
 
         return actions;
     }
 
-    private static bool CanValidate(ReportDto report) =>
+    private bool CanValidate(ReportDto report) =>
+        Roles.IsValidator &&
         report.Status is ReportStatus.PendingValidation or ReportStatus.NeedsFollowUp;
 
     private void RunExtraAction(ReportDto report, string action)
@@ -418,6 +437,7 @@
     public async ValueTask DisposeAsync()
     {
         Language.LanguageChanged -= HandleLanguageChanged;
+        Roles.RoleChanged -= HandleRoleChanged;
 
         if (_hubConnection is not null)
         {

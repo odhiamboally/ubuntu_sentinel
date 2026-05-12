@@ -9,6 +9,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 builder.Services.AddMudServices();
 builder.Services.AddScoped<AppLanguageService>();
+builder.Services.AddScoped<AppRoleService>();
 builder.Services.AddSingleton<UiTextService>();
 
 var app = builder.Build();

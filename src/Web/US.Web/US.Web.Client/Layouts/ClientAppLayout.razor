@@ -1,27 +1,98 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject Services.AppLanguageService Language
+@inject Services.AppRoleService Roles
 @inject Services.UiTextService Text
 @inject IJSRuntime JsRuntime
+@inject NavigationManager Navigation
 
 <ClientMudProviderHost />
 
-<header class="topbar">
-    <nav class="topbar-left" aria-label="Primary">
-        <a href="/dashboard" class="brand">Ubuntu Sentinel</a>
-        <MudButton Href="/reports" Variant="Variant.Text" Size="Size.Small" Class="topbar-link">Reports</MudButton>
-        <MudButton Href="/map" Variant="Variant.Text" Size="Size.Small" Class="topbar-link">Map</MudButton>
-    </nav>
-    <div class="topbar-right" aria-label="@Text.Text(_language, "Common.Language")">
-        <button type="button" class="@LanguageButtonClass("en")" @onclick="@(() => SetLanguageAsync("en"))">EN</button>
-        <button type="button" class="@LanguageButtonClass("fr")" @onclick="@(() => SetLanguageAsync("fr"))">FR</button>
+@if (!UseStaffShell)
+{
+    <div class="public-shell">
+        <div class="public-language-switch">
+            <button type="button" class="language-toggle" data-language-toggle="en" onclick="ubuntuSentinelSetLanguage('en')">EN</button>
+            <button type="button" class="language-toggle" data-language-toggle="fr" onclick="ubuntuSentinelSetLanguage('fr')">FR</button>
+        </div>
+        @Body
     </div>
-</header>
+}
+else
+{
+    <MudLayout Class="staff-layout">
+        <MudDrawer Open="true"
+                   Variant="DrawerVariant.Persistent"
+                   Elevation="1"
+                   ClipMode="DrawerClipMode.Never"
+                   Class="staff-drawer">
+            <div class="staff-brand">
+                <MudText Typo="Typo.caption" Color="Color.Primary" Class="staff-partner">Open Society Foundations</MudText>
+                <MudText Typo="Typo.h6" Class="staff-title">Ubuntu Sentinel</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Community intelligence</MudText>
+            </div>
 
-@Body
+            <div class="staff-nav-scroll">
+                <MudNavMenu Dense="true" Rounded="true" Color="Color.Primary" Class="staff-nav">
+                    <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+                        @Text.Text(_language, "Nav.Dashboard")
+                    </MudNavLink>
+                    <MudNavLink Href="/reports" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Article">
+                        @Text.Text(_language, "Nav.Reports")
+                    </MudNavLink>
+                    <MudNavLink Href="/map" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Map">
+                        @Text.Text(_language, "Nav.Map")
+                    </MudNavLink>
+                    @if (Roles.IsAdmin)
+                    {
+                        <MudDivider Class="my-2" />
+                        <MudNavLink Href="/reports" Icon="@Icons.Material.Filled.Psychology">
+                            Agentic diagnostics
+                        </MudNavLink>
+                    }
+                </MudNavMenu>
+            </div>
+
+            <div class="staff-user-panel">
+                <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Medium">
+                    <span id="ubuntu-role-initials">@UserInitials</span>
+                </MudAvatar>
+                <div class="staff-user-text">
+                    <MudText Typo="Typo.body2"><span id="ubuntu-role-display">@UserName</span></MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary"><span id="ubuntu-role-label">@RoleLabel</span></MudText>
+                </div>
+                <a class="staff-logout-link"
+                   href="/"
+                   title="Logout"
+                   onclick="ubuntuSentinelLogout()">
+                    Logout
+                </a>
+            </div>
+        </MudDrawer>
+
+        <MudMainContent Class="staff-main">
+            <div class="staff-main-inner">
+                @Body
+            </div>
+        </MudMainContent>
+    </MudLayout>
+}
 
 @code {
     private string _language = "en";
+
+    private bool UseStaffShell => !Roles.IsReporter || IsStaffRoute;
+
+    private bool IsStaffRoute
+    {
+        get
+        {
+            var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+            return relativePath.StartsWith("dashboard", StringComparison.OrdinalIgnoreCase) ||
+                   relativePath.StartsWith("reports", StringComparison.OrdinalIgnoreCase) ||
+                   relativePath.StartsWith("map", StringComparison.OrdinalIgnoreCase);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -31,21 +102,35 @@
         }
 
         await Language.InitializeAsync(JsRuntime);
+        await Roles.InitializeAsync(JsRuntime);
         _language = Language.CurrentLanguage;
         Language.LanguageChanged += HandleLanguageChanged;
+        Roles.RoleChanged += HandleRoleChanged;
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task SetLanguageAsync(string languageCode)
+    private string RoleLabel => Roles.CurrentRole switch
     {
-        await Language.SetLanguageAsync(languageCode, JsRuntime);
-    }
+        Services.DemoRole.Admin => Text.Text(_language, "Auth.Admin"),
+        Services.DemoRole.Validator => Text.Text(_language, "Auth.Validator"),
+        _ => Text.Text(_language, "Auth.Reporter")
+    };
 
-    private string LanguageButtonClass(string languageCode)
+    private string UserName => Roles.DisplayName ?? RoleLabel;
+
+    private string UserInitials
     {
-        return string.Equals(_language, languageCode, StringComparison.OrdinalIgnoreCase)
-            ? "topbar-language-button active"
-            : "topbar-language-button";
+        get
+        {
+            var source = string.IsNullOrWhiteSpace(Roles.DisplayName) ? RoleLabel : Roles.DisplayName;
+            var parts = source.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return parts.Length switch
+            {
+                0 => "U",
+                1 => parts[0][0].ToString().ToUpperInvariant(),
+                _ => $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant()
+            };
+        }
     }
 
     private void HandleLanguageChanged()
@@ -54,8 +139,14 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
+    private void HandleRoleChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     public void Dispose()
     {
         Language.LanguageChanged -= HandleLanguageChanged;
+        Roles.RoleChanged -= HandleRoleChanged;
     }
 }

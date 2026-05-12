@@ -78,8 +78,12 @@ Build Ubuntu Sentinel as a serious PeaceTech product demo: community intelligenc
   - [x] print-ready HTML PDF fallback
   - [x] JSON output for partner systems
 - [ ] Role-gated navigation:
-  - [ ] Reporter
-  - [ ] Community Validator
+  - [x] minimal username/password login endpoint for seeded Validator/Admin users
+  - [x] public reporter flow without registration/login
+  - [x] validator-only validation action
+  - [x] admin-only pipeline diagnostics
+  - [x] admin-only brief diagnostics
+  - [ ] production ASP.NET Identity/IAM
   - [ ] Advocate/CSO
   - [ ] OSF Partner demo view
 - [ ] Localization:
@@ -95,6 +99,11 @@ Build Ubuntu Sentinel as a serious PeaceTech product demo: community intelligenc
   - [x] maturity backlog
   - [x] final demo readiness checklist
   - [x] PDF export demo path
+
+- [ ] Persistence:
+  - [x] reports persisted to local JSON store for demo continuity
+  - [ ] EF Core/PostgreSQL durable store
+  - [ ] persisted users/roles through Identity
 
 ## Immediate Next Slices
 

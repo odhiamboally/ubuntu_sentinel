@@ -7,7 +7,9 @@
 @inject IJSRuntime JsRuntime
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.AppLanguageService Language
+@inject Services.AppRoleService Roles
 @inject Services.UiTextService Text
+@inject NavigationManager Navigation
 
 <PageTitle>@T("Map.Title") | Ubuntu Sentinel</PageTitle>
 
@@ -61,6 +63,13 @@
     protected override async Task OnInitializedAsync()
     {
         await Language.InitializeAsync(JsRuntime);
+        await Roles.InitializeAsync(JsRuntime);
+        if (Roles.IsReporter)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
         _language = Language.CurrentLanguage;
         Language.LanguageChanged += HandleLanguageChanged;
 

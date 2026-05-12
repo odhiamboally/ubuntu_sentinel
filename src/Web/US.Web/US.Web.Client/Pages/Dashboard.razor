@@ -9,8 +9,10 @@
 @inject Services.OfflineReportQueue OfflineQueue
 @inject Services.UiTextService Text
 @inject Services.AppLanguageService Language
+@inject Services.AppRoleService Roles
 @inject IJSRuntime JsRuntime
 @inject ISnackbar Snackbar
+@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
 <PageTitle>@T("Dashboard.Title") | Ubuntu Sentinel</PageTitle>
@@ -86,6 +88,13 @@
     protected override async Task OnInitializedAsync()
     {
         await Language.InitializeAsync(JsRuntime);
+        await Roles.InitializeAsync(JsRuntime);
+        if (Roles.IsReporter)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
         _language = Language.CurrentLanguage;
         Language.LanguageChanged += HandleLanguageChanged;
 

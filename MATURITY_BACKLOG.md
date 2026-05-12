@@ -35,6 +35,8 @@ These belong in `PLAN.md`, not here:
 | Production notification gateways | Demo can use an outbox/logged notification foundation; production should wire SMS/email/WhatsApp delivery with templates, retries, opt-in rules, and audit trails. |
 | Server-side PDF generation with QuestPDF | Demo uses print-ready HTML/PDF fallback; production should generate durable PDFs server-side with templates, signatures, and audit metadata. |
 | Branch protection and PR governance | During the demo sprint, direct main work is acceptable for speed. Production should require protected branches, PR review, build checks, and architecture/test gates. |
+| Production auth/IAM | Demo uses seeded username/password staff login and anonymous reporters. Production needs ASP.NET Identity or equivalent, token/cookie hardening, authorization policies, audit trails, and reporter-safe anonymous claim recovery. |
+| PostgreSQL persistence | Demo persists reports to a local JSON file to speed testing. Production should promote reports, users, roles, policy documents, validator assignments, and audit logs to PostgreSQL/EF Core. |
 | WhatsApp full conversation flow | Mention as future channel; build USSD/SMS-style flow first. |
 | Multi-tenant regional deployment | Important for OSF scale, not needed for local showcase. |
 | Advanced evaluator harness for AI outputs | Useful for production safety, not required for judge demo. |

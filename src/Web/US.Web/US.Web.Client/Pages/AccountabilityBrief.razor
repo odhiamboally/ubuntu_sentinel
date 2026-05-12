@@ -5,8 +5,10 @@
 @using US.SharedKernel.Enums
 @using MudBlazor
 @using Microsoft.JSInterop
+@using System.Net
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
+@inject Services.AppRoleService Roles
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
 
@@ -17,20 +19,23 @@
         <MudButton OnClick="@(() => Navigation.NavigateTo("/reports"))" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowBack">
             @Text.Text(_report?.LanguageCode ?? "en", "Common.BackToReports")
         </MudButton>
-
-        <MudButton OnClick="PrintBriefAsync" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
-            @T("Brief.PrintPdf")
-        </MudButton>
-
-        <MudButton Href="@BriefJsonUrl" Target="_blank" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.DataObject" Disabled="@(_isLoading || _result is null)">
-            @T("Brief.ExportJson")
-        </MudButton>
     </div>
 
-    <section class="hero-band">
-        <p class="eyebrow">@T("Brief.Eyebrow")</p>
-        <h1>@BriefTitle</h1>
-        <p class="lede">@BriefLede</p>
+    <section class="hero-band brief-hero">
+        <div>
+            <p class="eyebrow">@T("Brief.Eyebrow")</p>
+            <h1>@BriefTitle</h1>
+            <p class="lede">@BriefLede</p>
+        </div>
+        <div class="brief-export-actions no-print">
+            <MudButton OnClick="PrintBriefAsync" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
+                @T("Brief.PrintPdf")
+            </MudButton>
+
+            <MudButton Href="@BriefJsonUrl" Target="_blank" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.DataObject" Disabled="@(_isLoading || _result is null)">
+                @T("Brief.ExportJson")
+            </MudButton>
+        </div>
     </section>
 
     <section class="safety-note @(IsValidationBacked ? "validated-note" : null)">
@@ -53,7 +58,7 @@
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(_result.FallbackReason))
+        @if (IsAdminView && !string.IsNullOrWhiteSpace(_result.FallbackReason))
         {
             <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="pipeline-alert">
                 <div class="pipeline-alert-content">
@@ -63,7 +68,30 @@
             </MudAlert>
         }
 
-        <section class="brief-summary-row">
+        <section class="brief-public-meta">
+            <span>
+                <strong>@T("Common.Status")</strong>
+                <MudChip T="string" Size="Size.Small" Color="@StatusColor(_report?.Status ?? ReportStatus.Submitted)" Variant="Variant.Filled">
+                    @Text.Status(_report?.LanguageCode ?? "en", _report?.Status ?? ReportStatus.Submitted)
+                </MudChip>
+            </span>
+            <span>
+                <strong>@T("Common.IssueType")</strong>
+                <MudChip T="string" Size="Size.Small" Class="brief-chip issue-chip" Variant="Variant.Filled">
+                    @Text.IssueType(_report?.LanguageCode ?? "en", _result.IssueType)
+                </MudChip>
+            </span>
+            <span>
+                <strong>@T("Common.Urgency")</strong>
+                <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(_result.Urgency)" Variant="Variant.Filled">
+                    @Text.Urgency(_report?.LanguageCode ?? "en", _result.Urgency)
+                </MudChip>
+            </span>
+        </section>
+
+        @if (IsAdminView)
+        {
+            <section class="brief-summary-row admin-only-panel">
             <div class="brief-status-card">
                 <div>
                     <span>@T("Common.Status")</span>
@@ -119,11 +147,12 @@
                 </div>
             </div>
         </section>
+        }
 
         <section class="brief-stack">
-            @if (_result.PolicyMatch is not null)
+            @if (IsAdminView && _result.PolicyMatch is not null)
             {
-                <article class="brief-panel source-panel">
+                <article class="brief-panel source-panel admin-only-panel">
                     <p class="eyebrow">@T("Brief.SourceUsed")</p>
                     <h2>@_result.PolicyMatch.DocumentTitle</h2>
                     <p><strong>@_result.PolicyMatch.ArticleReference</strong> · @_result.PolicyMatch.DocumentType · similarity @_result.PolicyMatch.Similarity.ToString("0.00")</p>
@@ -133,7 +162,35 @@
 
             <article class="brief-panel">
                 <h2>@(IsValidationBacked ? T("Brief.ExportReady") : T("Brief.InternalDraft"))</h2>
-                <pre>@_result.AccountabilityBriefMarkdown</pre>
+                <div class="brief-document">
+                    @foreach (var line in BriefLines)
+                    {
+                        @switch (line.Kind)
+                        {
+                            case BriefLineKind.Title:
+                                <h1>@line.Text</h1>
+                                break;
+                            case BriefLineKind.Section:
+                                <h2>@line.Text</h2>
+                                break;
+                            case BriefLineKind.Bullet:
+                                <p class="brief-bullet">@((MarkupString)FormatInline(line.Text))</p>
+                                break;
+                            case BriefLineKind.Rule:
+                                <hr />
+                                break;
+                            case BriefLineKind.Note:
+                                <p class="brief-note">@((MarkupString)FormatInline(line.Text))</p>
+                                break;
+                            case BriefLineKind.Empty:
+                                <div class="brief-line-space"></div>
+                                break;
+                            default:
+                                <p>@((MarkupString)FormatInline(line.Text))</p>
+                                break;
+                        }
+                    }
+                </div>
             </article>
         </section>
     }
@@ -148,6 +205,7 @@
     private bool _isLoading = true;
 
     private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId);
+    private bool IsAdminView => Roles.IsAdmin;
 
     private bool IsValidationBacked =>
         _report?.Status == ReportStatus.Approved &&
@@ -208,6 +266,13 @@
 
         try
         {
+            await Roles.InitializeAsync(Js);
+            if (Roles.IsReporter)
+            {
+                Navigation.NavigateTo("/");
+                return;
+            }
+
             _report = await ApiClient.GetReportAsync(ReportId);
             _result = await ApiClient.GetPipelineResultAsync(ReportId);
         }
@@ -238,5 +303,84 @@
     private async Task PrintBriefAsync()
     {
         await Js.InvokeVoidAsync("print");
+    }
+
+    private IReadOnlyList<BriefLine> BriefLines =>
+        ParseBrief(_result?.AccountabilityBriefMarkdown ?? string.Empty);
+
+    private static IReadOnlyList<BriefLine> ParseBrief(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown))
+        {
+            return [];
+        }
+
+        return markdown.Replace("\r\n", "\n").Split('\n')
+            .Select(line =>
+            {
+                var trimmed = line.Trim();
+                if (string.IsNullOrWhiteSpace(trimmed))
+                {
+                    return new BriefLine(BriefLineKind.Empty, string.Empty);
+                }
+
+                if (trimmed == "---")
+                {
+                    return new BriefLine(BriefLineKind.Rule, string.Empty);
+                }
+
+                if (trimmed.StartsWith("# ", StringComparison.Ordinal))
+                {
+                    return new BriefLine(BriefLineKind.Title, trimmed[2..].Trim());
+                }
+
+                if (trimmed.StartsWith("## ", StringComparison.Ordinal))
+                {
+                    return new BriefLine(BriefLineKind.Section, trimmed[3..].Trim());
+                }
+
+                if (trimmed.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    return new BriefLine(BriefLineKind.Bullet, trimmed[2..].Trim());
+                }
+
+                if (trimmed.StartsWith("*", StringComparison.Ordinal) && trimmed.EndsWith("*", StringComparison.Ordinal))
+                {
+                    return new BriefLine(BriefLineKind.Note, trimmed.Trim('*').Trim());
+                }
+
+                return new BriefLine(BriefLineKind.Paragraph, trimmed);
+            })
+            .ToArray();
+    }
+
+    private static string FormatInline(string markdown)
+    {
+        var encoded = WebUtility.HtmlEncode(markdown);
+        var parts = encoded.Split("**");
+        if (parts.Length < 3)
+        {
+            return encoded;
+        }
+
+        for (var i = 1; i < parts.Length; i += 2)
+        {
+            parts[i] = $"<strong>{parts[i]}</strong>";
+        }
+
+        return string.Concat(parts);
+    }
+
+    private sealed record BriefLine(BriefLineKind Kind, string Text);
+
+    private enum BriefLineKind
+    {
+        Empty,
+        Title,
+        Section,
+        Paragraph,
+        Bullet,
+        Note,
+        Rule
     }
 }

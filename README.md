@@ -41,8 +41,12 @@ Implemented:
 - Four-stage pipeline UI.
 - OpenAI-backed runner behind `OPENAI_API_KEY` with deterministic fallback.
 - Human validation workflow with mandatory notes.
+- Demo role shell for Reporter, Validator, and Admin.
+- Seeded staff login for Validator/Admin; reporters remain anonymous.
+- Local JSON report persistence for demo continuity.
 - Read-only report view and explicit validation action.
 - Status-aware briefs: draft, follow-up, rejection/internal record, validation-backed.
+- Admin-only pipeline and brief diagnostics.
 - Print-ready brief export for browser Save as PDF.
 - Partner-system JSON brief export.
 - Dual conflict/resilience map with OpenStreetMap.
@@ -50,7 +54,8 @@ Implemented:
 Still open:
 
 - Server-side PDF generation.
-- Role-gated navigation.
+- Production ASP.NET Identity/IAM.
+- PostgreSQL-backed persistence.
 - Validator notifications.
 - PostgreSQL/pgvector persistence.
 - Production auth/IAM.

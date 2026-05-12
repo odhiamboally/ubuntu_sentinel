@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using US.SharedKernel.Contracts.Auth;
 using US.SharedKernel.Contracts.Intake;
 using US.SharedKernel.Contracts.Regions;
 using US.SharedKernel.Contracts.Reports;
@@ -71,6 +72,15 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
     public string GetBriefJsonUrl(Guid reportId)
     {
         return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json").ToString();
+    }
+
+    public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await httpClient.PostAsJsonAsync("/api/auth/login", request, JsonOptions, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<LoginResponse>(JsonOptions, cancellationToken)
+            ?? throw new InvalidOperationException("The API returned an empty login response.");
     }
 
     public async Task DeleteReportAsync(Guid reportId, CancellationToken cancellationToken = default)

@@ -1,6 +1,39 @@
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<MudThemeProvider />
+<MudThemeProvider Theme="_theme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+
+@code {
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = Colors.Teal.Darken1,
+            PrimaryContrastText = Colors.Shades.White,
+            Secondary = Colors.BlueGray.Lighten4,
+            SecondaryContrastText = Colors.BlueGray.Darken3,
+            Tertiary = Colors.Indigo.Default,
+            Background = "#fafbfc",
+            Surface = Colors.Shades.White,
+            AppbarBackground = Colors.Shades.White,
+            AppbarText = Colors.BlueGray.Darken4,
+            DrawerBackground = Colors.Shades.White,
+            DrawerText = Colors.BlueGray.Darken4,
+            TextPrimary = Colors.BlueGray.Darken4,
+            TextSecondary = Colors.BlueGray.Default,
+            Success = Colors.Green.Accent4,
+            Warning = Colors.Amber.Darken1,
+            Error = Colors.Red.Accent2,
+            Info = Colors.Indigo.Default,
+            LinesDefault = Colors.BlueGray.Lighten4,
+            TableLines = Colors.BlueGray.Lighten4
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DrawerWidthLeft = "272px",
+            AppbarHeight = "0px"
+        }
+    };
+}

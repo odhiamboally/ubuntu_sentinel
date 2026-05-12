@@ -1,0 +1,84 @@
+@page "/login"
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+@layout ClientAppLayout
+@using System.Net
+@using US.SharedKernel.Contracts.Auth
+@inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.AppRoleService Roles
+@inject Services.AppLanguageService Language
+@inject Services.UiTextService Text
+@inject IJSRuntime JsRuntime
+@inject NavigationManager Navigation
+
+<PageTitle>@T("Auth.Login") | Ubuntu Sentinel</PageTitle>
+
+<main class="page-shell auth-shell">
+    <section class="auth-card">
+        <p class="eyebrow">@T("Auth.RestrictedAccess")</p>
+        <h1>@T("Auth.Login")</h1>
+        <p>@T("Auth.LoginHint")</p>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">@_error</MudAlert>
+        }
+
+        <EditForm Model="_model" OnSubmit="LoginAsync" class="auth-form">
+            <MudTextField @bind-Value="_model.Username" Label="@T("Auth.Username")" Margin="Margin.Dense" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_model.Password" Label="@T("Auth.Password")" InputType="InputType.Password" Margin="Margin.Dense" Variant="Variant.Outlined" />
+            <div class="form-action-row">
+                <MudButton ButtonType="ButtonType.Submit" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="_isBusy">
+                    @(_isBusy ? T("Auth.SigningIn") : T("Auth.Login"))
+                </MudButton>
+                <MudButton Href="/" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">
+                    @T("Common.Cancel")
+                </MudButton>
+            </div>
+        </EditForm>
+    </section>
+</main>
+
+@code {
+    private LoginRequest _model = new();
+    private string _language = "en";
+    private string? _error;
+    private bool _isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Language.InitializeAsync(JsRuntime);
+        await Roles.InitializeAsync(JsRuntime);
+        _language = Language.CurrentLanguage;
+    }
+
+    private async Task LoginAsync()
+    {
+        _error = null;
+        _isBusy = true;
+
+        try
+        {
+            var response = await ApiClient.LoginAsync(_model);
+            var role = response.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                ? Services.DemoRole.Admin
+                : Services.DemoRole.Validator;
+
+            await Roles.SetAuthenticatedUserAsync(role, response.Username, response.DisplayName, JsRuntime);
+            Navigation.NavigateTo(role == Services.DemoRole.Admin ? "/reports" : "/dashboard", forceLoad: true);
+        }
+        catch (HttpRequestException exception) when (exception.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            _error = T("Auth.AccessDenied");
+        }
+        catch
+        {
+            _error = T("Auth.LoginFailed");
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private string T(string key) => Text.Text(_language, key);
+}
