@@ -1,27 +1,61 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject Services.AppLanguageService Language
+@inject Services.UiTextService Text
+@inject IJSRuntime JsRuntime
 
 <ClientMudProviderHost />
 
 <header class="topbar">
     <nav class="topbar-left" aria-label="Primary">
         <a href="/dashboard" class="brand">Ubuntu Sentinel</a>
-        <div class="nav-dropdown">
-            <MudButton Variant="Variant.Text" Size="Size.Small" Class="topbar-link nav-dropdown-trigger">Intake</MudButton>
-            <div class="nav-dropdown-menu" role="menu">
-                <MudButton Href="/intake/ussd" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">USSD simulator</MudButton>
-                <MudButton Href="/submit" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">Web form</MudButton>
-            </div>
-        </div>
-        <div class="nav-dropdown">
-            <MudButton Variant="Variant.Text" Size="Size.Small" Class="topbar-link nav-dropdown-trigger">Reports</MudButton>
-            <div class="nav-dropdown-menu" role="menu">
-                <MudButton Href="/reports" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">All reports</MudButton>
-                <MudButton Href="/validate" Variant="Variant.Text" Size="Size.Small" Class="nav-menu-item">Validate</MudButton>
-            </div>
-        </div>
+        <MudButton Href="/reports" Variant="Variant.Text" Size="Size.Small" Class="topbar-link">Reports</MudButton>
         <MudButton Href="/map" Variant="Variant.Text" Size="Size.Small" Class="topbar-link">Map</MudButton>
     </nav>
-    <div class="topbar-right" aria-hidden="true"></div>
+    <div class="topbar-right" aria-label="@Text.Text(_language, "Common.Language")">
+        <button type="button" class="@LanguageButtonClass("en")" @onclick="@(() => SetLanguageAsync("en"))">EN</button>
+        <button type="button" class="@LanguageButtonClass("fr")" @onclick="@(() => SetLanguageAsync("fr"))">FR</button>
+    </div>
 </header>
 
 @Body
+
+@code {
+    private string _language = "en";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await Language.InitializeAsync(JsRuntime);
+        _language = Language.CurrentLanguage;
+        Language.LanguageChanged += HandleLanguageChanged;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetLanguageAsync(string languageCode)
+    {
+        await Language.SetLanguageAsync(languageCode, JsRuntime);
+    }
+
+    private string LanguageButtonClass(string languageCode)
+    {
+        return string.Equals(_language, languageCode, StringComparison.OrdinalIgnoreCase)
+            ? "topbar-language-button active"
+            : "topbar-language-button";
+    }
+
+    private void HandleLanguageChanged()
+    {
+        _language = Language.CurrentLanguage;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Language.LanguageChanged -= HandleLanguageChanged;
+    }
+}

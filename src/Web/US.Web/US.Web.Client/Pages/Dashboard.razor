@@ -6,7 +6,11 @@
 @using US.SharedKernel.Enums
 @using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.OfflineReportQueue OfflineQueue
 @inject Services.UiTextService Text
+@inject Services.AppLanguageService Language
+@inject IJSRuntime JsRuntime
+@inject ISnackbar Snackbar
 @implements IAsyncDisposable
 
 <PageTitle>@T("Dashboard.Title") | Ubuntu Sentinel</PageTitle>
@@ -19,10 +23,6 @@
             <p class="lede">@T("Dashboard.Lede")</p>
         </div>
         <div class="page-controls">
-            <MudSelect T="string" @bind-Value="_language" Label="@T("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="language-select">
-                <MudSelectItem Value="@("en")">English</MudSelectItem>
-                <MudSelectItem Value="@("fr")">French</MudSelectItem>
-            </MudSelect>
             <MudChip T="string" Size="Size.Small" Color="@ConnectionColor" Variant="Variant.Filled">@ConnectionLabel</MudChip>
         </div>
     </section>
@@ -48,6 +48,16 @@
             <span>@T("Dashboard.Approved")</span>
             <strong>@_reports.Count(report => report.Status == ReportStatus.Approved)</strong>
         </article>
+        <article class="metric-card metric-card-action">
+            <span>@(_isOnline ? T("Common.Online") : T("Common.Offline")) · @_pendingCount @T("Common.Pending")</span>
+            <MudButton Size="Size.Small"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="SyncPendingAsync"
+                       Disabled="@(_isSyncing || !_isOnline || _pendingCount == 0)">
+                @(_isSyncing ? T("Common.Syncing") : T("Common.Sync"))
+            </MudButton>
+        </article>
     </section>
 </main>
 
@@ -55,6 +65,12 @@
     private readonly List<ReportDto> _reports = [];
     private HubConnection? _hubConnection;
     private string _language = "en";
+    private bool _isOnline = true;
+    private bool _isSyncing;
+    private int _pendingCount;
+    private IJSObjectReference? _connectivityModule;
+    private IJSObjectReference? _connectivityRegistration;
+    private DotNetObjectReference<Dashboard>? _dotNetReference;
 
     private string ConnectionLabel => _hubConnection?.State switch
     {
@@ -69,8 +85,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await Language.InitializeAsync(JsRuntime);
+        _language = Language.CurrentLanguage;
+        Language.LanguageChanged += HandleLanguageChanged;
+
         _reports.Clear();
         _reports.AddRange(await ApiClient.GetReportsAsync());
+        _pendingCount = await OfflineQueue.GetPendingCountAsync();
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(new Uri(ApiClient.ApiBaseUri, "/hubs/reports"))
@@ -91,6 +112,53 @@
         catch
         {
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _connectivityModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./connectivity.js");
+        _dotNetReference = DotNetObjectReference.Create(this);
+        _connectivityRegistration = await _connectivityModule.InvokeAsync<IJSObjectReference>("register", _dotNetReference);
+        _isOnline = await _connectivityModule.InvokeAsync<bool>("isOnline");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task NotifyOnlineStatusChanged(bool isOnline)
+    {
+        _isOnline = isOnline;
+
+        if (isOnline && _pendingCount > 0)
+        {
+            await SyncPendingAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SyncPendingAsync()
+    {
+        _isSyncing = true;
+
+        try
+        {
+            var result = await OfflineQueue.SyncAsync();
+            _pendingCount = await OfflineQueue.GetPendingCountAsync();
+            var message = result.Remaining == 0
+                ? Text.Format(_language, "Submit.SyncedAll", result.Synced)
+                : Text.Format(_language, "Submit.SyncedSome", result.Synced, result.Attempted, result.Remaining);
+
+            Snackbar.Add(message, result.Remaining == 0 ? Severity.Success : Severity.Warning);
+        }
+        finally
+        {
+            _isSyncing = false;
         }
     }
 
@@ -117,11 +185,32 @@
 
     private string T(string key) => Text.Text(_language, key);
 
+    private void HandleLanguageChanged()
+    {
+        _language = Language.CurrentLanguage;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     public async ValueTask DisposeAsync()
     {
+        Language.LanguageChanged -= HandleLanguageChanged;
+
         if (_hubConnection is not null)
         {
             await _hubConnection.DisposeAsync();
         }
+
+        if (_connectivityRegistration is not null)
+        {
+            await _connectivityRegistration.InvokeVoidAsync("dispose");
+            await _connectivityRegistration.DisposeAsync();
+        }
+
+        if (_connectivityModule is not null)
+        {
+            await _connectivityModule.DisposeAsync();
+        }
+
+        _dotNetReference?.Dispose();
     }
 }

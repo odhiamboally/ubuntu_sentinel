@@ -19,6 +19,7 @@ public sealed record SubmitReportRequest
     public string LanguageCode { get; set; } = "en";
 
     public IssueType? IssueTypeHint { get; set; }
+    public UrgencyLevel? UrgencyHint { get; set; }
     public bool WomenLed { get; set; }
     public bool YouthLed { get; set; }
     public bool IsSensitive { get; set; }

@@ -18,10 +18,9 @@ Keep Ubuntu Sentinel compact, corporate, OSF-credible, and field-aware.
 Primary demo navigation should support:
 
 - Dashboard.
-- Intake.
 - Reports.
 - Map.
-- Validate.
+- Validate as an explicit report action, not a hidden side effect of View.
 - Briefs/Pipeline when opened from a report.
 - Role selector or role-shaped view control.
 
@@ -32,6 +31,8 @@ Primary demo navigation should support:
 - Offline state must be explicit.
 - Destructive actions require confirmation.
 - Submit, validation, sync, and PDF generation feedback should use MudBlazor dialogs/snackbars where possible.
+- Disabled decision buttons must have visible nearby explanation.
+- Validator notes are required before approve, follow-up, or reject.
 
 ## Community Safety UX
 
@@ -39,6 +40,8 @@ Primary demo navigation should support:
 - Sensitive reports must not expose full details in shared/advocate views before validation.
 - AI output must be labeled draft until validation.
 - Original testimony must be preserved when translation is introduced.
+- Rejected reports must render as internal records, not escalation briefs.
+- Follow-up reports must render as follow-up briefs, not final advocacy outputs.
 
 ## Demo UX Priorities
 

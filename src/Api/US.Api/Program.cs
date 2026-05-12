@@ -4,6 +4,7 @@ using US.Api.Features.Intake;
 using US.Api.Features.Regions;
 using US.Api.Features.Reports;
 using US.Api.Features.Realtime;
+using US.SharedKernel.Inference;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,9 +33,18 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddSingleton<IReportStore, InMemoryReportStore>();
+builder.Services.AddSingleton<IssueTypeInferenceService>();
 builder.Services.AddSingleton<IRegionProfileStore, RegionProfileStore>();
-builder.Services.AddSingleton<IPolicyComparisonService, SeededPolicyComparisonService>();
-builder.Services.AddSingleton<IAccountabilityPipeline, DeterministicAccountabilityPipeline>();
+builder.Services.AddSingleton<SeededPolicyComparisonService>();
+builder.Services.AddSingleton<IPolicyComparisonService>(provider => provider.GetRequiredService<SeededPolicyComparisonService>());
+builder.Services.Configure<OpenAiPipelineOptions>(options =>
+{
+    options.ApiKey = builder.Configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+    options.Model = builder.Configuration["OpenAI:Model"] ?? Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4.1-mini";
+});
+builder.Services.AddHttpClient<OpenAiChatJsonClient>();
+builder.Services.AddSingleton<DeterministicAccountabilityPipeline>();
+builder.Services.AddSingleton<IAccountabilityPipeline, OpenAiAccountabilityPipeline>();
 builder.Services.AddSingleton<UssdSessionStore>();
 
 var app = builder.Build();
@@ -65,9 +75,12 @@ app.MapGet("/", () => Results.Ok(new
         "/api/reports",
         "/api/intake/ussd",
         "/api/reports/{id}/pipeline",
+        "/api/policy-documents",
         "/hubs/reports"
     }
 }));
+app.MapGet("/api/policy-documents", (SeededPolicyComparisonService policyDocuments) => Results.Ok(policyDocuments.GetDocuments()))
+    .WithTags("Policy Documents");
 app.MapReportEndpoints();
 app.MapRegionEndpoints();
 app.MapAccountabilityEndpoints();

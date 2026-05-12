@@ -17,9 +17,12 @@ public sealed record ReportDto
     public string? ReferencedCommitment { get; init; }
     public string? GapDescription { get; init; }
     public string? CommunityImpact { get; init; }
+    public IssueType? UserSelectedIssueType { get; init; }
+    public IssueTypeInferenceResultDto? IssueTypeInference { get; init; }
     public bool IsSensitive { get; init; }
     public DateTimeOffset SubmittedAt { get; init; }
     public DateTimeOffset? ValidatedAt { get; init; }
     public ValidationDecision ValidationDecision { get; init; } = ValidationDecision.Pending;
     public string? ValidatorNotes { get; init; }
+    public ValidationChecksDto ValidationChecks { get; init; } = new();
 }

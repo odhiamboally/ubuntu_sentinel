@@ -6,20 +6,46 @@
 <MudDialog Class="review-dialog">
     <TitleContent>
         <MudStack Spacing="0">
-            <MudText Typo="Typo.h6">@Report.Location.Name</MudText>
-            <MudText Typo="Typo.caption" Color="Color.Secondary">@RegionLabel(Report.RegionCode) · @Text.IssueType(Language, Report.IssueType) · @Text.Urgency(Language, Report.Urgency)</MudText>
+            <MudText Typo="Typo.h6">Report details</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Human validation and escalation decision</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Common.Status")</MudText>
-                <MudChip T="string" Size="Size.Small" Color="@StatusColor(Report.Status)" Variant="Variant.Filled">@Text.Status(Language, Report.Status)</MudChip>
+            <MudItem xs="12">
+                <div class="review-badge-row">
+                    <div class="review-meta-item">
+                        <span>@T("Common.Region")</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@RegionLabel(Report.RegionCode)</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.Location")</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default">@Report.Location.Name</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.IssueType")</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@Text.IssueType(Language, Report.IssueType)</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.Urgency")</span>
+                        <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(Report.Urgency)" Variant="Variant.Filled">@Text.Urgency(Language, Report.Urgency)</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.Status")</span>
+                        <MudChip T="string" Size="Size.Small" Color="@StatusColor(Report.Status)" Variant="Variant.Filled">@Text.Status(Language, Report.Status)</MudChip>
+                    </div>
+                </div>
             </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Common.Urgency")</MudText>
-                <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(Report.Urgency)" Variant="Variant.Filled">@Text.Urgency(Language, Report.Urgency)</MudChip>
-            </MudItem>
+            @if (HasIssueConflict)
+            {
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true">
+                        Issue type conflict: reporter selected <strong>@Text.IssueType(Language, Report.UserSelectedIssueType!.Value)</strong>,
+                        system resolved <strong>@Text.IssueType(Language, Report.IssueType)</strong>
+                        (@Report.IssueTypeInference?.Confidence.ToString("0.00") confidence; signals: @IssueSignals).
+                    </MudAlert>
+                </MudItem>
+            }
             <MudItem xs="12">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Submit.WhatHappened")</MudText>
                 <MudPaper Class="review-description" Elevation="0">@DisplayDescription</MudPaper>
@@ -28,16 +54,16 @@
                 <MudText Typo="Typo.subtitle2">@T("Validate.Checklist")</MudText>
                 <MudGrid Spacing="1" Class="review-checks">
                     <MudItem xs="12" sm="6">
-                        <MudCheckBox T="bool" @bind-Value="_consentConfirmed" Dense="true" Label="@T("Validate.ConsentCheck")" />
+                        <MudCheckBox T="bool" @bind-Value="_consentConfirmed" Dense="true" Disabled="@IsReadOnlyDecision" Label="@T("Validate.ConsentCheck")" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudCheckBox T="bool" @bind-Value="_locationChecked" Dense="true" Label="@T("Validate.LocationCheck")" />
+                        <MudCheckBox T="bool" @bind-Value="_locationChecked" Dense="true" Disabled="@IsReadOnlyDecision" Label="@T("Validate.LocationCheck")" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudCheckBox T="bool" @bind-Value="_evidenceChecked" Dense="true" Label="@T("Validate.EvidenceCheck")" />
+                        <MudCheckBox T="bool" @bind-Value="_evidenceChecked" Dense="true" Disabled="@IsReadOnlyDecision" Label="@T("Validate.EvidenceCheck")" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudCheckBox T="bool" @bind-Value="_safetyChecked" Dense="true" Label="@T("Validate.SafetyCheck")" />
+                        <MudCheckBox T="bool" @bind-Value="_safetyChecked" Dense="true" Disabled="@IsReadOnlyDecision" Label="@T("Validate.SafetyCheck")" />
                     </MudItem>
                 </MudGrid>
             </MudItem>
@@ -47,15 +73,25 @@
                               Placeholder="@T("Validate.NotesPlaceholder")"
                               Lines="4"
                               Variant="Variant.Outlined"
-                              Margin="Margin.Dense" />
+                              Margin="Margin.Dense"
+                              Required="true"
+                              Error="@(_notesTouched && !HasNotes)"
+                              ErrorText="@T("Validate.NotesRequired")"
+                              ReadOnly="@IsReadOnlyDecision" />
+                @if (!IsReadOnlyDecision && !HasNotes)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Validate.NotesRequired")</MudText>
+                }
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Cancel">@T("Common.Cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" OnClick="ApproveAsync">@T("Validate.Approve")</MudButton>
-        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" OnClick="@(() => CompleteAsync(ValidationDecision.NeedsFollowUp))">@T("Validate.FollowUp")</MudButton>
-        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" OnClick="@(() => CompleteAsync(ValidationDecision.Reject))">@T("Validate.Reject")</MudButton>
+        <MudTooltip Text="@ApprovalBlockedText" Disabled="@CanApprove">
+            <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" Disabled="@(!CanApprove)" OnClick="ApproveAsync">@T("Validate.Approve")</MudButton>
+        </MudTooltip>
+        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" Disabled="@(!CanMarkFollowUp)" OnClick="@(() => CompleteAsync(ValidationDecision.NeedsFollowUp))">@T("Validate.FollowUp")</MudButton>
+        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Error" Disabled="@(!CanReject)" OnClick="@(() => CompleteAsync(ValidationDecision.Reject))">@T("Validate.Reject")</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -77,8 +113,32 @@
     private bool _evidenceChecked;
     private bool _safetyChecked;
     private string? _notes;
+    private bool _notesTouched;
 
     private bool IsComplete => _consentConfirmed && _locationChecked && _evidenceChecked && _safetyChecked;
+
+    private bool HasNotes => !string.IsNullOrWhiteSpace(_notes);
+
+    private bool IsReadOnlyDecision => Report.Status is ReportStatus.Approved or ReportStatus.Rejected;
+
+    private bool CanApprove => !IsReadOnlyDecision && IsComplete && HasNotes;
+
+    private bool CanMarkFollowUp => !IsReadOnlyDecision && Report.Status != ReportStatus.NeedsFollowUp && HasNotes;
+
+    private bool CanReject => !IsReadOnlyDecision && HasNotes;
+
+    private string ApprovalBlockedText => !HasNotes
+        ? T("Validate.NotesRequired")
+        : T("Validate.ApproveBlocked");
+
+    private bool HasIssueConflict =>
+        Report.UserSelectedIssueType is { } selected &&
+        selected != Report.IssueType;
+
+    private string IssueSignals =>
+        Report.IssueTypeInference is null || Report.IssueTypeInference.Signals.Count == 0
+            ? "none"
+            : string.Join(", ", Report.IssueTypeInference.Signals.Take(5));
 
     private string DisplayDescription => Report.IsSensitive
         ? Text.Format(Language, "Validate.SensitiveDescription", Report.Description)
@@ -87,10 +147,16 @@
     protected override void OnInitialized()
     {
         _notes = InitialNotes;
+        _consentConfirmed = Report.ValidationChecks.ConsentConfirmed;
+        _locationChecked = Report.ValidationChecks.LocationConfidenceChecked;
+        _evidenceChecked = Report.ValidationChecks.EvidenceQualityChecked;
+        _safetyChecked = Report.ValidationChecks.ReporterSafetyChecked;
     }
 
     private async Task ApproveAsync()
     {
+        _notesTouched = true;
+
         if (!IsComplete)
         {
             return;
@@ -101,6 +167,21 @@
 
     private Task CompleteAsync(ValidationDecision decision)
     {
+        _notesTouched = true;
+
+        if (!HasNotes)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (decision == ValidationDecision.Reject)
+        {
+            _consentConfirmed = false;
+            _locationChecked = false;
+            _evidenceChecked = false;
+            _safetyChecked = false;
+        }
+
         var result = new ValidationReviewResult(
             decision,
             _notes,

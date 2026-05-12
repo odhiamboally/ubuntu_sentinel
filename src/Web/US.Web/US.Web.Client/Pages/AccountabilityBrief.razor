@@ -3,21 +3,25 @@
 @layout ClientAppLayout
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
+@using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
+@inject NavigationManager Navigation
 
-<PageTitle>Accountability Brief | Ubuntu Sentinel</PageTitle>
+<PageTitle>@T("Brief.PageTitle") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
-    <a class="secondary-link back-link" href="/reports">@Text.Text(_report?.LanguageCode ?? "en", "Common.BackToReports")</a>
+    <MudButton OnClick="@(() => Navigation.NavigateTo("/reports"))" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+        @Text.Text(_report?.LanguageCode ?? "en", "Common.BackToReports")
+    </MudButton>
 
     <section class="hero-band">
-        <p class="eyebrow">AI-assisted accountability</p>
+        <p class="eyebrow">@T("Brief.Eyebrow")</p>
         <h1>@BriefTitle</h1>
         <p class="lede">@BriefLede</p>
     </section>
 
-    <section class="safety-note @(_report?.Status == ReportStatus.Approved ? "validated-note" : null)">
+    <section class="safety-note @(IsValidationBacked ? "validated-note" : null)">
         <strong>@BriefSafetyTitle</strong>
         @BriefSafetyBody
     </section>
@@ -25,73 +29,98 @@
     @if (_isLoading)
     {
         <section class="empty-state">
-            <h2>Generating brief</h2>
-            <p>Running the demo accountability pipeline.</p>
+            <h2>@T("Brief.GeneratingTitle")</h2>
+            <p>@T("Brief.GeneratingBody")</p>
         </section>
     }
     else if (_result is null)
     {
         <section class="error-panel">
-            Could not load the accountability brief.
+            @T("Brief.LoadFailed")
         </section>
     }
     else
     {
-        <section class="pipeline-grid">
-            <article class="metric-card">
-                <span>Status</span>
-                <strong>@Text.Status(_report?.LanguageCode ?? "en", _report?.Status ?? ReportStatus.Submitted)</strong>
-            </article>
-            <article class="metric-card">
-                <span>Issue type</span>
-                <strong>@Text.IssueType(_report?.LanguageCode ?? "en", _result.IssueType)</strong>
-            </article>
-            <article class="metric-card">
-                <span>Urgency</span>
-                <strong>@Text.Urgency(_report?.LanguageCode ?? "en", _result.Urgency)</strong>
-            </article>
-            <article class="metric-card">
-                <span>Confidence</span>
-                <strong>@_result.Confidence.ToString("0.00")</strong>
-            </article>
+        @if (!string.IsNullOrWhiteSpace(_result.FallbackReason))
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="pipeline-alert">
+                <div class="pipeline-alert-content">
+                    <strong>@T("Pipeline.FallbackTitle")</strong>
+                    <span>@LocalizedFallbackReason</span>
+                </div>
+            </MudAlert>
+        }
+
+        <section class="brief-summary-row">
+            <div class="brief-status-card">
+                <div>
+                    <span>@T("Common.Status")</span>
+                    <MudChip T="string" Size="Size.Small" Color="@StatusColor(_report?.Status ?? ReportStatus.Submitted)" Variant="Variant.Filled">
+                        @Text.Status(_report?.LanguageCode ?? "en", _report?.Status ?? ReportStatus.Submitted)
+                    </MudChip>
+                </div>
+                <div>
+                    <span>@T("Common.IssueType")</span>
+                    <MudChip T="string" Size="Size.Small" Class="brief-chip issue-chip" Variant="Variant.Filled">
+                        @Text.IssueType(_report?.LanguageCode ?? "en", _result.IssueType)
+                    </MudChip>
+                </div>
+                <div>
+                    <span>@T("Common.Urgency")</span>
+                    <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(_result.Urgency)" Variant="Variant.Filled">
+                        @Text.Urgency(_report?.LanguageCode ?? "en", _result.Urgency)
+                    </MudChip>
+                </div>
+                <div>
+                    <span>@T("Pipeline.Confidence")</span>
+                    <MudChip T="string" Size="Size.Small" Class="brief-chip confidence-chip" Variant="Variant.Filled">
+                        @_result.Confidence.ToString("0.00")
+                    </MudChip>
+                </div>
+                <div>
+                    <span>@T("Brief.ValidationGate")</span>
+                    <MudChip T="string" Size="Size.Small" Color="@(IsValidationBacked ? Color.Success : Color.Warning)" Variant="Variant.Filled">
+                        @(IsValidationBacked ? T("Brief.Complete") : T("Brief.Draft"))
+                    </MudChip>
+                </div>
+                <div>
+                    <span>@T("Pipeline.Mode")</span>
+                    <MudChip T="string" Size="Size.Small" Color="@PipelineModeColor" Variant="Variant.Filled">
+                        @LocalizedPipelineMode
+                    </MudChip>
+                </div>
+            </div>
+
+            <div class="brief-panel validation-gate-panel">
+                <div>
+                    <p class="eyebrow">@T("Brief.HumanValidationGate")</p>
+                    <h2>@(IsValidationBacked ? T("Brief.ReadyTitle") : T("Brief.NotReadyTitle"))</h2>
+                    <p>@ValidationGateText</p>
+                </div>
+                <div class="validation-gate-checks">
+                    @foreach (var check in ValidationGateChecks)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="@(check.Done ? Color.Success : Color.Default)" Variant="Variant.Filled" Icon="@(check.Done ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">
+                            @check.Label
+                        </MudChip>
+                    }
+                </div>
+            </div>
         </section>
 
-        <section class="agent-timeline">
-            @foreach (var step in _result.Steps)
+        <section class="brief-stack">
+            @if (_result.PolicyMatch is not null)
             {
-                <article class="agent-step">
-                    <p class="eyebrow">@step.Name</p>
-                    <h2>@step.Purpose</h2>
-                    <p>@step.Output</p>
-                    <span>Confidence @step.Confidence.ToString("0.00")</span>
+                <article class="brief-panel source-panel">
+                    <p class="eyebrow">@T("Brief.SourceUsed")</p>
+                    <h2>@_result.PolicyMatch.DocumentTitle</h2>
+                    <p><strong>@_result.PolicyMatch.ArticleReference</strong> · @_result.PolicyMatch.DocumentType · similarity @_result.PolicyMatch.Similarity.ToString("0.00")</p>
+                    <p>@_result.PolicyMatch.Source · @_result.PolicyMatch.SourceUrl</p>
                 </article>
             }
-        </section>
-
-        <section class="brief-layout">
-            <article class="brief-panel">
-                <h2>Pipeline Output</h2>
-                <h3>Summary</h3>
-                <p>@_result.Summary</p>
-                <h3>Gap Analysis</h3>
-                <p>@_result.GapAnalysis</p>
-                <h3>Reparative Proposal</h3>
-                <p>@_result.ReparativeProposal</p>
-
-                @if (_result.Flags.Count > 0)
-                {
-                    <h3>Flags</h3>
-                    <div class="validation-tags">
-                        @foreach (var flag in _result.Flags)
-                        {
-                            <span>@flag</span>
-                        }
-                    </div>
-                }
-            </article>
 
             <article class="brief-panel">
-                <h2>Export-ready Markdown</h2>
+                <h2>@(IsValidationBacked ? T("Brief.ExportReady") : T("Brief.InternalDraft"))</h2>
                 <pre>@_result.AccountabilityBriefMarkdown</pre>
             </article>
         </section>
@@ -106,21 +135,58 @@
     private ReportDto? _report;
     private bool _isLoading = true;
 
-    private string BriefTitle => _report?.Status == ReportStatus.Approved
-        ? "Validation-backed accountability brief"
-        : "Draft accountability brief";
+    private bool IsValidationBacked =>
+        _report?.Status == ReportStatus.Approved &&
+        _report.ValidationChecks.IsComplete;
 
-    private string BriefLede => _report?.Status == ReportStatus.Approved
-        ? "This output has an approved report behind it, but still requires responsible partner review before escalation."
-        : "This output is an internal draft. Human validation is required before escalation.";
+    private string BriefTitle => IsValidationBacked
+        ? T("Brief.ValidatedTitle")
+        : T("Brief.DraftTitle");
 
-    private string BriefSafetyTitle => _report?.Status == ReportStatus.Approved
-        ? "Validated report"
-        : "Draft/unvalidated output";
+    private string BriefLede => IsValidationBacked
+        ? T("Brief.ValidatedLede")
+        : T("Brief.DraftLede");
 
-    private string BriefSafetyBody => _report?.Status == ReportStatus.Approved
-        ? "The underlying report has passed human validation. Use this brief for responsible review, partner coordination, and escalation planning."
-        : "This brief is generated assistance. It is not a legal finding, verified evidence, or authorization to escalate without human validation and community safety review.";
+    private string BriefSafetyTitle => IsValidationBacked
+        ? T("Brief.ValidatedSafetyTitle")
+        : T("Brief.DraftSafetyTitle");
+
+    private string BriefSafetyBody => IsValidationBacked
+        ? T("Brief.ValidatedSafetyBody")
+        : T("Brief.DraftSafetyBody");
+
+    private string ValidationGateText => IsValidationBacked
+        ? T("Brief.ValidationComplete")
+        : T("Brief.ValidationPending");
+
+    private IReadOnlyList<(string Label, bool Done)> ValidationGateChecks =>
+    [
+        (T("Validate.ConsentCheck"), _report?.ValidationChecks.ConsentConfirmed == true),
+        (T("Validate.LocationCheck"), _report?.ValidationChecks.LocationConfidenceChecked == true),
+        (T("Validate.EvidenceCheck"), _report?.ValidationChecks.EvidenceQualityChecked == true),
+        (T("Validate.SafetyCheck"), _report?.ValidationChecks.ReporterSafetyChecked == true)
+    ];
+
+    private Color PipelineModeColor =>
+        string.Equals(_result?.PipelineMode, "OpenAI-backed", StringComparison.OrdinalIgnoreCase)
+            ? Color.Success
+            : Color.Warning;
+
+    private string LocalizedPipelineMode =>
+        _result?.PipelineMode switch
+        {
+            "OpenAI-backed" => T("Pipeline.ModeOpenAI"),
+            "Deterministic fallback" => T("Pipeline.ModeFallback"),
+            _ => _result?.PipelineMode ?? string.Empty
+        };
+
+    private string LocalizedFallbackReason =>
+        _result?.FallbackReason switch
+        {
+            "OPENAI_API_KEY is not configured." => T("Pipeline.ApiKeyMissing"),
+            "OpenAI pipeline failed. Deterministic fallback was used." => T("Pipeline.OpenAiFailed"),
+            _ => _result?.FallbackReason ?? string.Empty
+        };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -136,4 +202,22 @@
             _isLoading = false;
         }
     }
+
+    private string T(string key) => Text.Text(_report?.LanguageCode ?? "en", key);
+
+    private static Color StatusColor(ReportStatus status) => status switch
+    {
+        ReportStatus.Approved => Color.Success,
+        ReportStatus.NeedsFollowUp => Color.Warning,
+        ReportStatus.Rejected => Color.Error,
+        _ => Color.Info
+    };
+
+    private static Color UrgencyColor(UrgencyLevel urgency) => urgency switch
+    {
+        UrgencyLevel.Critical => Color.Error,
+        UrgencyLevel.High => Color.Warning,
+        UrgencyLevel.Low => Color.Success,
+        _ => Color.Info
+    };
 }

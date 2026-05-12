@@ -14,7 +14,7 @@ Calls, SMS, WhatsApp, email, hotlines, and local meetings already exist. They ar
 - community validation,
 - policy/promise comparison,
 - reporter status visibility,
-- escalation-ready accountability briefs,
+- escalation-ready accountability outputs only when validated,
 - evidence of resilience, not only harm.
 
 ## OSF Alignment
@@ -25,14 +25,22 @@ Ubuntu Sentinel serves the intersection of:
 - Transformative Peace: community-led peace infrastructure and reparative justice.
 - Resources Futures: extraction, CDA, land, water, and community benefit promise tracking.
 
+It supports OSF's “shifting power to communities” by moving validation, narrative control, and accountability evidence closer to the people affected.
+
 ## Differentiators
 
 - USSD-style intake for feature-phone and low-connectivity contexts.
+- Global language choice independent of region.
 - Dual-zone map: conflict zones and resilience zones.
-- Four-agent Codex pipeline visible to judges.
-- Seeded policy/RAG comparison for promise-delivery gaps.
+- Four-stage Codex/accountability pipeline visible to judges.
+- Seeded public-source comparison for promise, rights, and policy gaps.
 - Community validation gate before escalation.
-- Role-shaped views for reporter, validator, advocate, and OSF partner.
+- Status-aware outputs: draft, follow-up, rejection/internal record, validation-backed brief.
+- Role-shaped direction for reporter, validator, advocate, and OSF partner.
+
+## Resilience-Zone Framing
+
+The dual-zone map is philosophically central, not decorative. Ubuntu Sentinel maps where peace is already working — women-led mediations, youth alert networks, local agreements, and shared resource practices — alongside conflict zones. Communities are primary peace actors, not only victims. The resilience layer makes that visible.
 
 ## Demo Narrative
 
@@ -49,4 +57,5 @@ After demo day, the architecture can grow into:
 - satellite imagery correlation,
 - production IAM,
 - full consent lifecycle,
-- real WhatsApp and partner integrations.
+- durable policy/CDA ingestion,
+- real WhatsApp, SMS, and partner integrations.

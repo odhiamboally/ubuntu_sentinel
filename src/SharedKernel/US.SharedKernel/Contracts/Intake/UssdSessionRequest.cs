@@ -6,4 +6,6 @@ public sealed record UssdSessionRequest
     public string PhoneNumber { get; init; } = "+254700000000";
     public string ServiceCode { get; init; } = "*384#";
     public string Text { get; init; } = string.Empty;
+    public string RegionCode { get; init; } = "sahel";
+    public string LanguageCode { get; init; } = "fr";
 }

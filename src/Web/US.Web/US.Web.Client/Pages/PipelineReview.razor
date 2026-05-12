@@ -7,63 +7,107 @@
 @inject Services.UiTextService Text
 @inject NavigationManager Navigation
 
-<PageTitle>Agent Pipeline | Ubuntu Sentinel</PageTitle>
+<PageTitle>@T("Pipeline.PageTitle") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
-    <MudButton OnClick="@(() => Navigation.NavigateTo("/reports"))" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">Back to reports</MudButton>
+    <MudButton OnClick="@(() => Navigation.NavigateTo("/reports"))" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@T("Common.BackToReports")</MudButton>
 
     <section class="hero-band dashboard-hero">
         <div>
-            <p class="eyebrow">Codex agentic pipeline</p>
-            <h1>Community testimony to accountability intelligence</h1>
-            <p class="lede">The report is structured, compared against seeded commitments, checked for safety, and drafted into an accountability brief for human validation.</p>
+            <p class="eyebrow">@T("Pipeline.Eyebrow")</p>
+            <h1>@T("Pipeline.Title")</h1>
+            <p class="lede">@T("Pipeline.Lede")</p>
         </div>
         @if (_report is not null)
         {
-            <MudButton OnClick="@(() => Navigation.NavigateTo($"/reports/{ReportId}/brief"))" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">Open brief</MudButton>
+            <MudButton OnClick="@(() => Navigation.NavigateTo($"/reports/{ReportId}/brief"))" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">@T("Pipeline.OpenBrief")</MudButton>
         }
     </section>
 
     @if (_isLoading)
     {
         <section class="empty-state">
-            <h2>Running pipeline</h2>
-            <p>Preparing the four-agent accountability workflow.</p>
+            <h2>@T("Pipeline.RunningTitle")</h2>
+            <p>@T("Pipeline.RunningBody")</p>
         </section>
     }
     else if (_report is null || _result is null)
     {
-        <section class="error-panel">Could not load the agent pipeline.</section>
+        <section class="error-panel">@T("Pipeline.LoadFailed")</section>
     }
     else
     {
-        <section class="pipeline-summary-grid">
-            <article class="metric-card">
-                <span>Report status</span>
-                <strong>@Text.Status(_report.LanguageCode, _report.Status)</strong>
-            </article>
-            <article class="metric-card">
-                <span>Issue</span>
-                <strong>@Text.IssueType(_report.LanguageCode, _result.IssueType)</strong>
-            </article>
-            <article class="metric-card">
-                <span>Confidence</span>
-                <strong>@_result.Confidence.ToString("0.00")</strong>
-            </article>
-            <article class="metric-card">
-                <span>Policy match</span>
-                <strong>@(_result.PolicyMatch?.Similarity.ToString("0.00") ?? "None")</strong>
-            </article>
+        @if (!string.IsNullOrWhiteSpace(_result.FallbackReason))
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="pipeline-alert">
+                <div class="pipeline-alert-content">
+                    <strong>@T("Pipeline.FallbackTitle")</strong>
+                    <span>@LocalizedFallbackReason</span>
+                </div>
+            </MudAlert>
+        }
+
+        <section class="pipeline-status-strip">
+            <span class="status-strip-item">
+                <strong>@T("Pipeline.ReportStatus")</strong>
+                <MudChip T="string" Size="Size.Small" Color="@StatusColor(_report.Status)" Variant="Variant.Filled">@Text.Status(_report.LanguageCode, _report.Status)</MudChip>
+            </span>
+            <span class="status-strip-item">
+                <strong>@T("Pipeline.Issue")</strong>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@Text.IssueType(_report.LanguageCode, _result.IssueType)</MudChip>
+            </span>
+            <span class="status-strip-item">
+                <strong>@T("Pipeline.Confidence")</strong>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled">@_result.Confidence.ToString("0.00")</MudChip>
+            </span>
+            <span class="status-strip-item">
+                <strong>@T("Pipeline.PolicyMatch")</strong>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">@(_result.PolicyMatch?.Similarity.ToString("0.00") ?? T("Common.None"))</MudChip>
+            </span>
+            <span class="status-strip-item">
+                <strong>@T("Pipeline.Mode")</strong>
+                <MudChip T="string" Size="Size.Small" Color="@PipelineModeColor" Variant="Variant.Filled">@LocalizedPipelineMode</MudChip>
+            </span>
         </section>
+
+        @if (HasIssueConflict)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="pipeline-alert">
+                @T("Pipeline.IssueConflict") <strong>@Text.IssueType(_report.LanguageCode, _report.UserSelectedIssueType!.Value)</strong>;
+                @T("Pipeline.IssueUsed") <strong>@Text.IssueType(_report.LanguageCode, _report.IssueType)</strong>.
+                @T("Pipeline.Signals"): @IssueSignals.
+            </MudAlert>
+        }
 
         @if (_result.PolicyMatch is not null)
         {
             <section class="policy-match-panel">
-                <p class="eyebrow">Seeded policy comparison</p>
+                <p class="eyebrow">@T("Pipeline.ClauseComparison")</p>
                 <h2>@_result.PolicyMatch.DocumentTitle</h2>
-                <p>@_result.PolicyMatch.Commitment</p>
-                <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true">
-                    @_result.PolicyMatch.Gap
+                <div class="policy-match-meta">
+                    <span><strong>@T("Pipeline.ComparedClaim")</strong>@_report.Description</span>
+                    <span><strong>@T("Common.Region")</strong>@_result.PolicyMatch.RegionCode.ToUpperInvariant()</span>
+                    <span><strong>@T("Pipeline.DocumentType")</strong>@_result.PolicyMatch.DocumentType</span>
+                    <span><strong>@T("Pipeline.Source")</strong>@_result.PolicyMatch.Source · @_result.PolicyMatch.SourceUrl</span>
+                    <span><strong>@T("Pipeline.Clause")</strong>@_result.PolicyMatch.ArticleReference</span>
+                </div>
+                <p class="policy-commitment">@_result.PolicyMatch.Commitment</p>
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true" Class="policy-gap-alert">
+                    <div class="policy-gap-content">
+                        <strong>@T("Pipeline.Gap")</strong>
+                        <span>@_result.PolicyMatch.Gap</span>
+                    </div>
+                </MudAlert>
+            </section>
+        }
+        else
+        {
+            <section class="policy-match-panel">
+                <p class="eyebrow">@T("Pipeline.ClauseComparison")</p>
+                <h2>@T("Pipeline.NoMatchTitle")</h2>
+                <p><strong>@T("Pipeline.ComparedClaim"):</strong> @_report.Description</p>
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true">
+                    @T("Pipeline.NoMatchBody")
                 </MudAlert>
             </section>
         }
@@ -78,20 +122,10 @@
                         <h2>@step.value.Purpose</h2>
                         <p>@step.value.Output</p>
                         <MudProgressLinear Value="@((double)(step.value.Confidence * 100))" Color="Color.Primary" Rounded="true" Size="Size.Small" />
-                        <span class="agent-confidence">Confidence @step.value.Confidence.ToString("0.00")</span>
+                        <span class="agent-confidence">@T("Pipeline.Confidence") @step.value.Confidence.ToString("0.00")</span>
                     </div>
                 </article>
             }
-        </section>
-
-        <section class="brief-panel">
-            <h2>Draft accountability intelligence</h2>
-            <h3>Summary</h3>
-            <p>@_result.Summary</p>
-            <h3>Gap analysis</h3>
-            <p>@_result.GapAnalysis</p>
-            <h3>Reparative proposal</h3>
-            <p>@_result.ReparativeProposal</p>
         </section>
     }
 </main>
@@ -103,6 +137,44 @@
     private ReportDto? _report;
     private ReportPipelineResultDto? _result;
     private bool _isLoading = true;
+
+    private bool HasIssueConflict =>
+        _report?.UserSelectedIssueType is { } selected &&
+        selected != _report.IssueType;
+
+    private string IssueSignals =>
+        _report?.IssueTypeInference is null || _report.IssueTypeInference.Signals.Count == 0
+            ? T("Common.None")
+            : string.Join(", ", _report.IssueTypeInference.Signals.Take(5));
+
+    private string LocalizedPipelineMode =>
+        _result?.PipelineMode switch
+        {
+            "OpenAI-backed" => T("Pipeline.ModeOpenAI"),
+            "Deterministic fallback" => T("Pipeline.ModeFallback"),
+            _ => _result?.PipelineMode ?? string.Empty
+        };
+
+    private Color PipelineModeColor =>
+        _result?.PipelineMode == "OpenAI-backed" ? Color.Success : Color.Warning;
+
+    private static Color StatusColor(ReportStatus status) => status switch
+    {
+        ReportStatus.Approved => Color.Success,
+        ReportStatus.NeedsFollowUp => Color.Warning,
+        ReportStatus.Rejected => Color.Error,
+        _ => Color.Info
+    };
+
+    private string LocalizedFallbackReason =>
+        _result?.FallbackReason switch
+        {
+            "OPENAI_API_KEY is not configured." => T("Pipeline.ApiKeyMissing"),
+            "OpenAI pipeline failed. Deterministic fallback was used." => T("Pipeline.OpenAiFailed"),
+            _ => _result?.FallbackReason ?? string.Empty
+        };
+
+    private string T(string key) => Text.Text(_report?.LanguageCode ?? "en", key);
 
     protected override async Task OnParametersSetAsync()
     {

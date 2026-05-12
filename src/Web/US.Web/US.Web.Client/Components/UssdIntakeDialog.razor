@@ -1,0 +1,42 @@
+<MudDialog Class="ussd-intake-dialog">
+    <TitleContent>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h6">@T("Ussd.Title")</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Ussd.Subtitle")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <UssdIntakePanel Class="ussd-layout-dialog"
+                         LanguageCode="@LanguageCode"
+                         RegionCode="@RegionCode"
+                         ReportSubmitted="HandleReportSubmitted" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="Close">@T("Ussd.Close")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject]
+    private Services.UiTextService Text { get; set; } = default!;
+
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string LanguageCode { get; set; } = "en";
+
+    [Parameter]
+    public string RegionCode { get; set; } = "sahel";
+
+    private void HandleReportSubmitted(Guid reportId)
+    {
+    }
+
+    private void Close()
+    {
+        MudDialog.Close();
+    }
+
+    private string T(string key) => Text.Text(LanguageCode, key);
+}

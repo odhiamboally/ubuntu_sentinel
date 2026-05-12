@@ -4,10 +4,13 @@
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
 @using MudBlazor
+@implements IDisposable
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
+@inject Services.AppLanguageService Language
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IJSRuntime JsRuntime
 
 <PageTitle>@T("Validate.Title") | Ubuntu Sentinel</PageTitle>
 
@@ -17,12 +20,6 @@
             <p class="eyebrow">@T("Validate.Eyebrow")</p>
             <h1>@T("Validate.Title")</h1>
             <p class="lede">@T("Validate.Lede")</p>
-        </div>
-        <div class="page-controls">
-            <MudSelect T="string" @bind-Value="_language" Label="@T("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="language-select">
-                <MudSelectItem Value="@("en")">English</MudSelectItem>
-                <MudSelectItem Value="@("fr")">French</MudSelectItem>
-            </MudSelect>
         </div>
     </section>
 
@@ -61,7 +58,7 @@
                     <MudTh>@T("Common.Location")</MudTh>
                     <MudTh>@T("Common.Urgency")</MudTh>
                     <MudTh>@T("Submit.WhatHappened")</MudTh>
-                    <MudTh Class="actions-column">Actions</MudTh>
+                    <MudTh Class="actions-column">@T("Common.Actions")</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@T("Common.Region")">@RegionLabel(context.RegionCode)</MudTd>
@@ -72,8 +69,8 @@
                     <MudTd DataLabel="@T("Submit.WhatHappened")">
                         <span class="table-description">@Preview(context.Description)</span>
                     </MudTd>
-                    <MudTd DataLabel="Actions" Class="actions-column">
-                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => OpenReviewAsync(context))">View</MudButton>
+                    <MudTd DataLabel="@T("Common.Actions")" Class="actions-column">
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => OpenReviewAsync(context))">@T("Common.View")</MudButton>
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -94,6 +91,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await Language.InitializeAsync(JsRuntime);
+        _language = Language.CurrentLanguage;
+        Language.LanguageChanged += HandleLanguageChanged;
         await LoadReportsAsync();
     }
 
@@ -148,7 +148,14 @@
             var updated = await ApiClient.ValidateReportAsync(reportId, new ValidateReportRequest
             {
                 Decision = review.Decision,
-                Notes = BuildValidationNotes(review)
+                Notes = review.Notes,
+                Checks = new ValidationChecksDto
+                {
+                    ConsentConfirmed = review.ConsentConfirmed,
+                    LocationConfidenceChecked = review.LocationChecked,
+                    EvidenceQualityChecked = review.EvidenceChecked,
+                    ReporterSafetyChecked = review.SafetyChecked
+                }
             });
 
             _reports = _reports
@@ -169,12 +176,10 @@
 
     private string T(string key) => Text.Text(_language, key);
 
-    private static string BuildValidationNotes(ValidationReviewDialog.ValidationReviewResult review)
+    private void HandleLanguageChanged()
     {
-        var checklistSummary =
-            $"Checks: consent={(review.ConsentConfirmed ? "yes" : "no")}; location={(review.LocationChecked ? "yes" : "no")}; evidence={(review.EvidenceChecked ? "yes" : "no")}; safety={(review.SafetyChecked ? "yes" : "no")}.";
-
-        return string.IsNullOrWhiteSpace(review.Notes) ? checklistSummary : $"{review.Notes.Trim()}\n{checklistSummary}";
+        _language = Language.CurrentLanguage;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private static string RegionLabel(string regionCode) => regionCode switch
@@ -222,4 +227,8 @@
         await dialog.Result;
     }
 
+    public void Dispose()
+    {
+        Language.LanguageChanged -= HandleLanguageChanged;
+    }
 }

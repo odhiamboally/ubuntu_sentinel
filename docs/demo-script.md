@@ -2,69 +2,113 @@
 
 ## Opening
 
-Ubuntu Sentinel is community intelligence infrastructure for transformative peace. It helps communities submit evidence through low-bandwidth channels, validate it locally, compare it against public commitments, and generate accountability briefs institutions can act on.
+Ubuntu Sentinel is community intelligence infrastructure for transformative peace. It helps communities submit evidence through low-bandwidth channels, validate it locally, compare it against public commitments, and generate accountability outputs institutions can act on only after community validation.
 
-## Five-Minute Flow
+## Canonical Demo Scenario
 
-### 1. Field Intake
+Use a scenario that maps clearly to the seeded public corpus:
 
-Show the USSD simulator.
+```text
+Market demolition without notice by government
+```
 
-Script:
+Recommended fields:
 
-> A community member does not need a smartphone or stable internet. They can submit through a USSD-style flow in French.
+- Region: Eastern DRC.
+- Location: Goma.
+- Issue type: allow inference or select Governance failure.
+- Urgency: High or Medium.
+- Sensitive: optional, depending on whether you want to demonstrate hidden details and safety validation.
 
-Submit a resource justice scenario:
+This maps cleanly to African Charter Article 14 on property rights and shows the real-source comparison without forcing the match.
+
+Alternative resource justice scenario:
 
 ```text
 Our village was promised a clean water point under the mining agreement, but nothing has been built. Families still pay for water and youth leaders have reported this several times.
 ```
 
-Show the success state and use **View pipeline** so the field intake visibly hands off to intelligence processing.
+Use this if demonstrating mining/community benefit commitments.
 
-### 2. Agent Pipeline
+## Five-Minute Flow
 
-Open the pipeline view for the report, or submit through the web form and show the live pipeline feedback panel.
+### 1. Language and Field Intake
+
+Start at the landing page, choose English or French, then show the USSD simulator or web form.
+
+Script:
+
+> A community member does not need a smartphone or stable internet. They can submit through a USSD-style flow, and language is treated as a communication preference, not forced by region.
+
+Submit the scenario. Show the success notification and final USSD `END` screen if using USSD.
+
+### 2. Reports List
+
+Open Reports and show the submitted report appearing in the operational list.
 
 Show:
 
-- Evidence Structuring Agent.
-- Policy RAG Comparison Agent.
-- Safety and Ethics Review Agent.
-- Accountability Brief Generation Agent.
+- status,
+- urgency,
+- sensitive hiding if applicable,
+- View as read-only,
+- Validate as an explicit action.
 
 Script:
 
-> Codex is not decorative here. It converts informal community testimony into structured, reviewable accountability intelligence.
+> View is not validation. Community validation is a deliberate action with checks and notes.
 
-### 3. Community Validation
+### 3. Agent Pipeline
 
-Open validation.
-
-Show consent, location confidence, evidence quality, and reporter safety checks.
-
-Script:
-
-> AI does not decide what gets escalated. Community validators do.
-
-### 4. Accountability Brief
-
-Open the generated brief.
+Open the pipeline from report actions.
 
 Show:
 
-- summary,
-- promise gap,
-- validation state,
-- recommended action,
-- regional pathway,
-- PDF-ready output.
+- fallback/OpenAI mode alert,
+- evidence structuring,
+- policy comparison,
+- safety review,
+- brief generation,
+- real-source clause comparison.
 
 Script:
 
-> This is the bridge from community voice to institution-ready accountability.
+> Codex is not decorative here. It converts informal community testimony into structured, reviewable accountability intelligence, while preserving human validation as the gate.
 
-### 5. Dual-Zone Map
+### 4. Community Validation
+
+Open Validate from the report actions.
+
+Show:
+
+- consent,
+- location confidence,
+- evidence quality,
+- reporter safety,
+- mandatory validator notes.
+
+Try approving before notes/checks if useful, then complete the checks and approve or mark follow-up.
+
+Script:
+
+> AI does not decide what gets escalated. Community validators do, and every decision needs notes for accountability.
+
+### 5. Accountability Output
+
+Open the brief.
+
+Show status-aware behavior:
+
+- draft while pending,
+- follow-up brief when follow-up is required,
+- internal rejection record if rejected,
+- validation-backed brief if approved.
+
+Script:
+
+> The same report data does not always produce the same output. Ubuntu Sentinel respects the validation decision.
+
+### 6. Dual-Zone Map
 
 Open the map.
 
@@ -73,7 +117,7 @@ Show:
 - red conflict zones,
 - green resilience zones,
 - OpenStreetMap geography,
-- women-led/youth-led peace signals.
+- submitted report zones.
 
 Script:
 

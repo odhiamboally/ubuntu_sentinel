@@ -42,7 +42,23 @@ public static class ReportEndpoints
             IHubContext<ReportHub> hubContext,
             CancellationToken cancellationToken) =>
         {
-            var report = await store.UpdateValidationAsync(id, request.Decision, request.Notes, cancellationToken);
+            if (string.IsNullOrWhiteSpace(request.Notes))
+            {
+                return Results.BadRequest(new
+                {
+                    error = "Validator notes are required for every validation decision."
+                });
+            }
+
+            if (request.Decision == US.SharedKernel.Enums.ValidationDecision.Approve && !request.Checks.IsComplete)
+            {
+                return Results.BadRequest(new
+                {
+                    error = "Approval requires consent, location confidence, evidence quality, and reporter safety checks."
+                });
+            }
+
+            var report = await store.UpdateValidationAsync(id, request, cancellationToken);
             if (report is null)
             {
                 return Results.NotFound();

@@ -4,13 +4,11 @@
 
 Build Ubuntu Sentinel as a serious PeaceTech product demo: community intelligence infrastructure that helps conflict-affected communities submit, validate, compare, and escalate accountability evidence without losing control of their own data.
 
-This is no longer a thin reporting MVP. The target is a prize-ready Andela x OpenAI Codex Accelerator showcase aligned with OSF's "shifting power to communities" mission.
-
 ## Track Positioning
 
 - Primary: Voice & Accountability.
 - Secondary: Peace & Community.
-- Resource justice: included through promise tracking, policy comparison, CDA/mining/service commitments, and reparative accountability briefs.
+- Resource justice: included through promise tracking, policy comparison, mining/service commitments, rights frameworks, and reparative accountability outputs.
 
 ## Demo-Day Build List
 
@@ -21,87 +19,102 @@ This is no longer a thin reporting MVP. The target is a prize-ready Andela x Ope
   - [x] `US.Persistence`
   - [x] `US.Api`
   - [x] `US.Web` / `US.Web.Client`
-  - [ ] `US.Mobile` MAUI simulator if web/API spine is stable
   - [ ] architecture tests
-- [ ] Multi-channel intake:
+  - [ ] optional `US.Mobile` simulator
+- [x] Multi-channel intake:
   - [x] web submit flow
   - [x] offline browser queue foundation
-  - [x] USSD simulator foundation
-  - [x] Africa's Talking webhook-shaped endpoint foundation
+  - [x] USSD simulator
+  - [x] webhook-shaped USSD endpoint
+  - [x] optional flags in USSD: women-led, youth-led, sensitive
   - [ ] SMS-shaped intake endpoint or simulator
 - [ ] Community data sovereignty:
-  - [ ] consent captured at intake
-  - [ ] original testimony preserved
-  - [ ] reporter status view
+  - [x] original testimony preserved
+  - [x] sensitive handling flag
+  - [x] sensitive details hidden until consent and reporter safety clear
+  - [x] read-only view vs explicit validation split
+  - [ ] reporter-owned status view after auth exists
   - [ ] withdrawal/cancel before validation
 - [ ] Policy/RAG promise tracking:
-  - [x] seeded policy/CDA documents
-  - [ ] pgvector-ready abstraction
+  - [x] seeded public policy/legal corpus in API JSON
+  - [x] sourced clause references with URLs
+  - [x] category/domain guardrails for matching
   - [x] deterministic semantic comparison fallback
-  - [x] promise-delivery gap output
-- [ ] Four-agent Codex pipeline:
+  - [x] promise/rights gap output
+  - [ ] pgvector-ready persisted abstraction
+  - [ ] admin document upload/ingestion
+- [x] Four-agent accountability pipeline:
   - [x] evidence structuring
   - [x] policy RAG comparison
   - [x] safety and ethics review
   - [x] accountability brief generation
   - [x] visible pipeline page
-  - [x] live submission-to-pipeline feedback
-- [ ] Human validation:
-  - [x] approve/follow-up/reject workflow foundation
-  - [ ] consent/location/evidence/safety checks persisted
-  - [ ] community validator role view
-  - [ ] brief escalation blocked until validation
-- [ ] Dual-zone map:
+  - [x] fallback mode alert
+  - [x] OpenAI-backed runner behind `OPENAI_API_KEY`
+  - [x] deterministic fallback clearly labeled in UI
+  - [x] status-aware rejected/follow-up pipeline behavior
+- [x] Human validation:
+  - [x] approve/follow-up/reject workflow
+  - [x] consent/location/evidence/safety checks persisted
+  - [x] approval blocked until checks complete
+  - [x] validator notes required for every decision
+  - [x] reject clears validation checks
+  - [x] follow-up cannot be repeated from follow-up state
+  - [ ] validator notification foundation for new regional reports
+  - [ ] role-gated validator view
+- [x] Dual-zone map:
   - [x] seeded conflict zones
   - [x] seeded resilience zones
   - [x] Leaflet/OpenStreetMap tile layer
-  - [ ] women-led/youth-led resilience signals
+  - [x] submitted reports rendered as live map zones
   - [ ] region filters
+  - [ ] precise geocoding/GPS
 - [ ] Accountability brief:
   - [x] markdown brief foundation
-  - [ ] QuestPDF generation
+  - [x] validation-backed vs draft state
+  - [x] follow-up brief state
+  - [x] rejection/internal record state
+  - [x] validator notes included
+  - [ ] PDF export through HTML print fallback or QuestPDF
   - [ ] JSON output for partner systems
-  - [ ] validation-backed vs draft state
-  - [ ] EN/FR output
 - [ ] Role-gated navigation:
   - [ ] Reporter
   - [ ] Community Validator
   - [ ] Advocate/CSO
   - [ ] OSF Partner demo view
 - [ ] Localization:
-  - [x] EN/FR UI foundation
-  - [ ] full EN/FR coverage on demo pages
-  - [ ] AR documented as next language unless time permits
+  - [x] global EN/FR language selection
+  - [x] EN/FR labels on main demo pages
+  - [x] USSD respects selected language independent of region
+  - [ ] final full EN/FR audit
+  - [ ] Arabic documented as next language
 - [ ] Demo/readme:
-  - [ ] 5-minute judge script
-  - [ ] Codex usage explanation
-  - [ ] architecture diagram
-  - [ ] Phase 2 roadmap
+  - [x] 5-minute judge script foundation
+  - [x] Codex usage explanation foundation
+  - [x] architecture guardrails
+  - [x] maturity backlog
+  - [ ] final demo readiness checklist
+  - [ ] PDF export demo path
+
+## Immediate Next Slices
+
+1. Update docs to current strategy and workflow.
+2. Add PDF export via print-ready HTML fallback.
+3. Add demo readiness checklist and Codex collaboration narrative.
+4. Add validator notification foundation if time permits.
+5. Final browser demo pass.
 
 ## Explicit Phase 2
-
-Do not build these for the demo:
 
 - Marten oral history registry.
 - Women peacebuilder registry as a full module.
 - Satellite imagery correlation.
 - Full consent lifecycle UI.
 - Production IAM/multi-tenant auth.
-
-Represent women-led peacebuilding through report flags, resilience zones, seeded examples, and demo narrative.
-
-## 48-Hour Execution Order
-
-1. Align solution structure and docs to the revised product.
-2. Move current report behavior behind application/domain/persistence boundaries.
-3. Add seeded policy documents and promise comparison service.
-4. Add USSD simulator and webhook-shaped intake.
-5. Add four-agent pipeline result and pipeline UI.
-6. Add dual-zone map.
-7. Upgrade validation checks and role-shaped navigation.
-8. Add QuestPDF or PDF-ready export fallback.
-9. Polish demo, docs, and browser run.
+- Durable policy/CDA document storage.
+- Admin document ingestion UI.
+- Real USSD short code.
 
 ## Success Bar
 
-The demo must make judges feel that Ubuntu Sentinel is not an OSF-branded dashboard. It is community-owned intelligence infrastructure: offline-capable, multi-channel, human-validated, policy-aware, and able to show both harm and resilience.
+The demo must make judges feel that Ubuntu Sentinel is not an OSF-branded dashboard. It is community-owned intelligence infrastructure: offline-capable, multi-channel, human-validated, policy-aware, status-aware, and able to show both harm and resilience.

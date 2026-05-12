@@ -12,6 +12,9 @@ public sealed record ReportPipelineResultDto
     public string GapAnalysis { get; init; } = string.Empty;
     public string ReparativeProposal { get; init; } = string.Empty;
     public string AccountabilityBriefMarkdown { get; init; } = string.Empty;
+    public string PipelineMode { get; init; } = "Deterministic fallback";
+    public string? PipelineModel { get; init; }
+    public string? FallbackReason { get; init; }
     public PolicyMatchDto? PolicyMatch { get; init; }
     public IReadOnlyList<PipelineStepDto> Steps { get; init; } = [];
     public IReadOnlyList<string> Flags { get; init; } = [];

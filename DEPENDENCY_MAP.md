@@ -39,27 +39,33 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    Intake["Web / Offline PWA / USSD / SMS"]
+    Intake["Web / Offline Queue / USSD"]
     Case["Community intelligence record"]
-    Pipeline["4-agent Codex pipeline"]
-    Policy["Seeded policy / CDA comparison"]
+    Inference["Issue inference and user hint resolution"]
+    Pipeline["4-stage accountability pipeline"]
+    Policy["Public clause comparison"]
     Safety["Safety and ethics review"]
     Validation["Community validator gate"]
     Draft["Draft accountability brief"]
+    FollowUp["Follow-up brief"]
+    Rejected["Internal rejection record"]
     Ready["Validation-backed accountability brief"]
     Map["Dual-zone map"]
-    Reporter["Reporter status and control"]
+    Reporter["Reporter status/control future"]
     Partner["Advocate / OSF partner"]
 
     Intake --> Case
     Case --> Reporter
-    Case --> Pipeline
+    Case --> Inference
+    Inference --> Pipeline
     Pipeline --> Policy
     Pipeline --> Safety
     Pipeline --> Draft
     Case --> Validation
     Safety --> Validation
     Validation --> Ready
+    Validation --> FollowUp
+    Validation --> Rejected
     Case --> Map
     Ready --> Partner
 ```
@@ -67,11 +73,11 @@ flowchart TD
 ## Implementation Dependency Order
 
 1. Architecture boundaries.
-2. Report/case lifecycle migration.
-3. Intake channel abstraction.
-4. Seeded policy comparison.
+2. Report/case lifecycle.
+3. Intake channels.
+4. Seeded public clause comparison.
 5. Agent pipeline.
-6. Validation gate.
+6. Validation gate and status-aware outputs.
 7. Dual-zone map.
 8. Accountability brief/PDF.
 9. Role-shaped UI.
@@ -81,8 +87,9 @@ flowchart TD
 
 - Existing report store still lives in API feature code.
 - PostgreSQL/pgvector-ready persistence is not implemented.
-- Seeded policy comparison is implemented as a deterministic RAG fallback.
-- USSD simulator is implemented as a foundation and needs polish/status tracking.
-- Dual-zone map is implemented as a seeded foundation and needs Leaflet/filters.
+- Seeded policy comparison is implemented as a deterministic fallback over versioned API JSON corpus.
+- OpenAI-backed runner exists behind configuration; current local demo often runs deterministic fallback unless `OPENAI_API_KEY` is configured.
+- Dual-zone map combines seeded zones with submitted report zones; submitted coordinates are region-derived and should later move to precise geocoding/GPS.
 - Role-shaped navigation is not implemented.
-- PDF generation is not implemented.
+- PDF generation/export is not implemented yet.
+- Validator notification foundation is not implemented yet.

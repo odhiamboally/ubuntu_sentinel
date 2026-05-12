@@ -1,0 +1,65 @@
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Microsoft.Extensions.Options;
+
+namespace US.Api.Features.Accountability;
+
+public sealed class OpenAiChatJsonClient(HttpClient httpClient, IOptions<OpenAiPipelineOptions> options)
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly OpenAiPipelineOptions _options = options.Value;
+
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
+
+    public string Model => _options.Model;
+
+    public async Task<T> CompleteJsonAsync<T>(string systemPrompt, object input, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+        {
+            throw new InvalidOperationException("OpenAI API key is not configured.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+        request.Content = JsonContent.Create(new
+        {
+            model = _options.Model,
+            temperature = 0.2,
+            response_format = new { type = "json_object" },
+            messages = new object[]
+            {
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = JsonSerializer.Serialize(input, JsonOptions) }
+            }
+        }, options: JsonOptions);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"OpenAI request failed with {(int)response.StatusCode}: {responseText}");
+        }
+
+        using var document = JsonDocument.Parse(responseText);
+        var content = document
+            .RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new InvalidOperationException("OpenAI response did not include JSON content.");
+        }
+
+        return JsonSerializer.Deserialize<T>(content, JsonOptions)
+            ?? throw new InvalidOperationException("OpenAI JSON content could not be deserialized.");
+    }
+}

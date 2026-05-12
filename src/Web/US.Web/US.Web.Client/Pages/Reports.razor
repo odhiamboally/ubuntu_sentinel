@@ -7,9 +7,11 @@
 @using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
+@inject Services.AppLanguageService Language
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 
 <PageTitle>@T("Reports.Title") | Ubuntu Sentinel</PageTitle>
@@ -22,12 +24,14 @@
             <p class="lede">@T("Reports.Lede")</p>
         </div>
         <div class="page-controls">
-            <MudSelect T="string" @bind-Value="_language" Label="@T("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="language-select">
-                <MudSelectItem Value="@("en")">English</MudSelectItem>
-                <MudSelectItem Value="@("fr")">French</MudSelectItem>
-            </MudSelect>
             <MudChip T="string" Size="Size.Small" Color="@ConnectionColor" Variant="Variant.Filled">@ConnectionLabel</MudChip>
         </div>
+    </section>
+
+    <section class="list-command-bar">
+        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => Navigation.NavigateTo("/submit"))">
+            @T("Reports.CreateNew")
+        </MudButton>
     </section>
 
     <section class="table-surface">
@@ -48,7 +52,7 @@
                     <MudTh>@T("Common.Urgency")</MudTh>
                     <MudTh>@T("Submit.WhatHappened")</MudTh>
                     <MudTh>@T("Common.Submitted")</MudTh>
-                    <MudTh Class="dashboard-actions-column">Actions</MudTh>
+                    <MudTh Class="dashboard-actions-column">@T("Common.Actions")</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@T("Common.Region")">@RegionLabel(context.RegionCode)</MudTd>
@@ -63,15 +67,15 @@
                         <span class="table-description">@PreviewReport(context)</span>
                     </MudTd>
                     <MudTd DataLabel="@T("Common.Submitted")">@context.SubmittedAt.LocalDateTime.ToString("g")</MudTd>
-                    <MudTd DataLabel="Actions" Class="dashboard-actions-column">
+                    <MudTd DataLabel="@T("Common.Actions")" Class="dashboard-actions-column">
                         <TableRowActions ViewTooltip="@T("Common.View")"
                                          EditTooltip="@T("Common.Edit")"
                                          DeleteTooltip="@T("Common.Delete")"
-                                         ExtraActions="@(new[] { BriefActionLabel(context) })"
-                                         OnView="@(() => ViewPipeline(context.Id))"
+                                         ExtraActions="@ReportActions(context)"
+                                         OnView="@(() => OpenDetailsAsync(context))"
                                          OnEdit="@EditReportAsync"
                                          OnDelete="@(() => DeleteReportAsync(context.Id))"
-                                         OnExtraAction="@((_) => ViewBrief(context.Id))" />
+                                         OnExtraAction="@((action) => RunExtraAction(context, action))" />
                     </MudTd>
                 </RowTemplate>
             </MudTable>
@@ -97,6 +101,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await Language.InitializeAsync(JsRuntime);
+        _language = Language.CurrentLanguage;
+        Language.LanguageChanged += HandleLanguageChanged;
+
         _reports.Clear();
         _reports.AddRange(await ApiClient.GetReportsAsync());
 
@@ -145,9 +153,19 @@
 
     private static string PreviewReport(ReportDto report)
     {
-        return report.IsSensitive
-            ? "Sensitive report. Details are hidden in shared listings until validator review confirms safe handling."
-            : Preview(report.Description);
+        if (!report.IsSensitive || SensitiveHandlingCleared(report))
+        {
+            return Preview(report.Description);
+        }
+
+        return "Sensitive report. Details remain hidden in shared listings until a validator confirms consent and reporter safety in the review checklist.";
+    }
+
+    private static bool SensitiveHandlingCleared(ReportDto report)
+    {
+        return report.ValidationChecks.ConsentConfirmed
+            && report.ValidationChecks.ReporterSafetyChecked
+            && report.Status is ReportStatus.Approved or ReportStatus.NeedsFollowUp;
     }
 
     private static string Preview(string value)
@@ -157,6 +175,12 @@
     }
 
     private string T(string key) => Text.Text(_language, key);
+
+    private void HandleLanguageChanged()
+    {
+        _language = Language.CurrentLanguage;
+        _ = InvokeAsync(StateHasChanged);
+    }
 
     private void ViewPipeline(Guid reportId)
     {
@@ -173,6 +197,117 @@
         return report.Status == ReportStatus.Approved
             ? T("Reports.GenerateBrief")
             : T("Reports.GenerateDraftBrief");
+    }
+
+    private IReadOnlyList<string> ReportActions(ReportDto report)
+    {
+        var actions = new List<string>();
+
+        if (CanValidate(report))
+        {
+            actions.Add(T("Reports.Validate"));
+        }
+
+        actions.Add(T("Reports.ViewPipeline"));
+        actions.Add(BriefActionLabel(report));
+
+        return actions;
+    }
+
+    private static bool CanValidate(ReportDto report) =>
+        report.Status is ReportStatus.PendingValidation or ReportStatus.NeedsFollowUp;
+
+    private void RunExtraAction(ReportDto report, string action)
+    {
+        if (string.Equals(action, T("Reports.Validate"), StringComparison.Ordinal))
+        {
+            _ = OpenReviewAsync(report);
+            return;
+        }
+
+        if (string.Equals(action, T("Reports.ViewPipeline"), StringComparison.Ordinal))
+        {
+            ViewPipeline(report.Id);
+            return;
+        }
+
+        ViewBrief(report.Id);
+    }
+
+    private async Task OpenDetailsAsync(ReportDto report)
+    {
+        var parameters = new DialogParameters<ReportDetailsDialog>
+        {
+            { dialog => dialog.Report, report },
+            { dialog => dialog.Language, _language }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ReportDetailsDialog>(T("Reports.DetailsTitle"), parameters, options);
+        await dialog.Result;
+    }
+
+    private async Task OpenReviewAsync(ReportDto report)
+    {
+        var parameters = new DialogParameters<ValidationReviewDialog>
+        {
+            { dialog => dialog.Report, report },
+            { dialog => dialog.Language, _language },
+            { dialog => dialog.InitialNotes, report.ValidatorNotes }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ValidationReviewDialog>(T("Validate.Eyebrow"), parameters, options);
+        var result = await dialog.Result;
+        if (result is not { Canceled: false, Data: ValidationReviewDialog.ValidationReviewResult review })
+        {
+            return;
+        }
+
+        await DecideAsync(report.Id, review);
+    }
+
+    private async Task DecideAsync(Guid reportId, ValidationReviewDialog.ValidationReviewResult review)
+    {
+        try
+        {
+            var updated = await ApiClient.ValidateReportAsync(reportId, new ValidateReportRequest
+            {
+                Decision = review.Decision,
+                Notes = review.Notes,
+                Checks = new ValidationChecksDto
+                {
+                    ConsentConfirmed = review.ConsentConfirmed,
+                    LocationConfidenceChecked = review.LocationChecked,
+                    EvidenceQualityChecked = review.EvidenceChecked,
+                    ReporterSafetyChecked = review.SafetyChecked
+                }
+            });
+
+            UpsertReport(updated);
+
+            var message = Text.Format(_language, "Validate.Marked", updated.Id, Text.Status(_language, updated.Status));
+            Snackbar.Add(message, Severity.Success);
+            await ShowFeedbackAsync(T("Validate.ActionCompleteTitle"), T("Validate.ActionCompleteBody"), Icons.Material.Filled.CheckCircle, Color.Success);
+        }
+        catch
+        {
+            var message = T("Validate.ActionFailed");
+            Snackbar.Add(message, Severity.Error);
+            await ShowFeedbackAsync(T("Common.Error"), message, Icons.Material.Filled.Error, Color.Error);
+        }
     }
 
     private async Task EditReportAsync()
@@ -282,6 +417,8 @@
 
     public async ValueTask DisposeAsync()
     {
+        Language.LanguageChanged -= HandleLanguageChanged;
+
         if (_hubConnection is not null)
         {
             await _hubConnection.DisposeAsync();

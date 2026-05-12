@@ -4,23 +4,35 @@
 @using US.SharedKernel.Contracts.Regions
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
+@using US.SharedKernel.Inference
 @using MudBlazor
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.OfflineReportQueue OfflineQueue
 @inject Services.UiTextService Text
+@inject Services.AppLanguageService Language
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IJSRuntime JsRuntime
 @inject NavigationManager Navigation
+@inject IssueTypeInferenceService IssueTypeInference
 @implements IAsyncDisposable
 
 <PageTitle>@T("Submit.Title") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
-    <section class="hero-band">
-        <p class="eyebrow">@T("Submit.Eyebrow")</p>
-        <h1>@T("Submit.Title")</h1>
-        <p class="lede">@T("Submit.Lede")</p>
+    <section class="hero-band dashboard-hero">
+        <div>
+            <p class="eyebrow">@T("Submit.Eyebrow")</p>
+            <h1>@T("Submit.Title")</h1>
+            <p class="lede">@T("Submit.Lede")</p>
+        </div>
+        <MudButton Size="Size.Small"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Dialpad"
+                   OnClick="OpenUssdDialogAsync">
+            @T("Submit.UseUssd")
+        </MudButton>
     </section>
 
     <section class="safety-note">
@@ -47,13 +59,6 @@
                 }
             </MudSelect>
 
-            <MudSelect T="string" Value="_model.LanguageCode" ValueChanged="OnLanguageChanged" Label="@RequiredLabel("Common.Language")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined">
-                @foreach (var language in CurrentLanguages)
-                {
-                    <MudSelectItem Value="@language.Code">@language.Name</MudSelectItem>
-                }
-            </MudSelect>
-
             <MudTextField @bind-Value="_model.LocationName" Label="@RequiredLabel("Common.Location")" Placeholder="@T("Submit.LocationPlaceholder")" Margin="Margin.Dense" Variant="Variant.Outlined" />
 
             <MudSelect T="IssueType?" @bind-Value="_model.IssueTypeHint" Label="@RequiredLabel("Common.IssueType")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined">
@@ -63,13 +68,41 @@
                 }
             </MudSelect>
 
-            <MudTextField @bind-Value="_model.Description"
+            <MudSelect T="UrgencyLevel?" @bind-Value="_model.UrgencyHint" Label="@RequiredLabel("Common.Urgency")" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined">
+                @foreach (var urgency in Enum.GetValues<UrgencyLevel>())
+                {
+                    <MudSelectItem T="UrgencyLevel?" Value="@urgency">@Text.Urgency(_model.LanguageCode, urgency)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Value="@_model.Description"
+                          ValueChanged="OnDescriptionChanged"
                           Label="@RequiredLabel("Submit.WhatHappened")"
                           Placeholder="@T("Submit.DescriptionPlaceholder")"
                           Lines="6"
                           Class="full-span"
+                          Immediate="true"
                           Margin="Margin.Dense"
                           Variant="Variant.Outlined" />
+
+            @if (_issueSuggestion?.SuggestedType is { } suggestedType)
+            {
+                <MudAlert Severity="@SuggestionSeverity" Variant="Variant.Outlined" Dense="true" Class="full-span inference-alert">
+                    <div class="inference-row">
+                        <span>
+                            @T("Submit.SuggestedIssue"): <strong>@Text.IssueType(_model.LanguageCode, suggestedType)</strong>
+                            (@_issueSuggestion.Confidence.ToString("0.00")) · @T("Submit.Signals"): @string.Join(", ", _issueSuggestion.Signals.Take(4))
+                        </span>
+                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => UseIssueSuggestion(suggestedType))">
+                            @T("Submit.UseSuggestion")
+                        </MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default" OnClick="IgnoreIssueSuggestion">
+                            @T("Submit.IgnoreSuggestion")
+                        </MudButton>
+                    </div>
+                </MudAlert>
+            }
 
             <div class="check-row full-span">
                 <MudCheckBox T="bool" @bind-Value="_model.WomenLed" Dense="true" Label="@T("Submit.WomenLed")" />
@@ -77,20 +110,17 @@
                 <MudCheckBox T="bool" @bind-Value="_model.IsSensitive" Dense="true" Label="@T("Submit.Sensitive")" />
             </div>
 
-            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSubmitting" Class="full-span">
-                @(_isSubmitting ? T("Submit.Submitting") : T("Submit.Submit"))
-            </MudButton>
+            <div class="form-action-row full-span">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSubmitting" Size="Size.Small">
+                    @(_isSubmitting ? T("Submit.Submitting") : T("Submit.Submit"))
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="@(() => Navigation.NavigateTo("/reports"))">
+                    @T("Common.Cancel")
+                </MudButton>
+            </div>
         </EditForm>
 
         <aside class="context-panel">
-            <div class="sync-strip">
-                <span class="@(_isOnline ? "status-online" : "status-offline")">@(_isOnline ? T("Common.Online") : T("Common.Offline"))</span>
-                <span>@_pendingCount @T("Common.Pending")</span>
-                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="SyncPendingAsync" Disabled="@(_isSyncing || _pendingCount == 0)">
-                    @(_isSyncing ? T("Common.Syncing") : T("Common.Sync"))
-                </MudButton>
-            </div>
-
             <h2>@T("Submit.RegionContext")</h2>
             @if (CurrentRegion is null)
             {
@@ -99,76 +129,31 @@
             else
             {
                 <h3>@CurrentRegion.Name</h3>
-                <p>@RegionDescription(CurrentRegion.Code)</p>
+                <p>@CurrentRegion.Description</p>
                 <dl>
                     <dt>@T("Submit.RegionalBodies")</dt>
                     <dd>@string.Join(", ", CurrentRegion.RegionalBodies)</dd>
                     <dt>@T("Submit.EscalationPathways")</dt>
-                    <dd>@RegionPathways(CurrentRegion.Code)</dd>
+                    <dd>@CurrentRegion.EscalationSummary</dd>
+                    @if (CurrentRegion.RelevantSources.Count > 0)
+                    {
+                        <dt>Relevant sources</dt>
+                        <dd>
+                            <ul class="region-source-list">
+                                @foreach (var source in CurrentRegion.RelevantSources)
+                                {
+                                    <li>
+                                        <span>@source.Title</span>
+                                        <small>@source.Type</small>
+                                    </li>
+                                }
+                            </ul>
+                        </dd>
+                    }
                 </dl>
             }
         </aside>
     </section>
-
-    @if (_lastSubmittedReport is not null || _isPipelineLoading)
-    {
-        <section class="live-pipeline-panel">
-            <div class="live-pipeline-header">
-                <div>
-                    <p class="eyebrow">Codex agentic pipeline</p>
-                    <h2>@(_isPipelineLoading ? "Transforming report into accountability intelligence" : "Pipeline ready for human validation")</h2>
-                    <p>@PipelineStatusText</p>
-                </div>
-                @if (_lastSubmittedReport is not null)
-                {
-                    <MudButton OnClick="@(() => Navigation.NavigateTo($"/reports/{_lastSubmittedReport.Id}/pipeline"))"
-                               Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               Size="Size.Small">
-                        View pipeline
-                    </MudButton>
-                }
-            </div>
-
-            @if (_pipelinePreview is null)
-            {
-                <div class="agent-preview-grid">
-                    @foreach (var step in PreviewSteps)
-                    {
-                        <article class="agent-preview-card pending">
-                            <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Primary" />
-                            <div>
-                                <strong>@step.Title</strong>
-                                <span>@step.Description</span>
-                            </div>
-                        </article>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="agent-preview-grid">
-                    @foreach (var step in _pipelinePreview.Steps)
-                    {
-                        <article class="agent-preview-card complete">
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
-                            <div>
-                                <strong>@step.Name</strong>
-                                <span>@step.Output</span>
-                            </div>
-                        </article>
-                    }
-                </div>
-
-                @if (_pipelinePreview.PolicyMatch is not null)
-                {
-                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="pipeline-alert">
-                        Matched @_pipelinePreview.PolicyMatch.DocumentTitle: @_pipelinePreview.PolicyMatch.Gap
-                    </MudAlert>
-                }
-            }
-        </section>
-    }
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
@@ -183,43 +168,30 @@
     {
         RegionCode = "drc",
         LanguageCode = "fr",
-        IssueTypeHint = IssueType.BrokenPromise
+        UrgencyHint = UrgencyLevel.Medium
     };
 
     private IReadOnlyList<RegionProfileDto> _regions = [];
     private readonly List<string> _validationErrors = [];
     private bool _isSubmitting;
-    private bool _isSyncing;
     private bool _isOnline = true;
-    private bool _isPipelineLoading;
     private int _pendingCount;
     private string? _errorMessage;
-    private ReportDto? _lastSubmittedReport;
-    private ReportPipelineResultDto? _pipelinePreview;
+    private IssueTypeInferenceResultDto? _issueSuggestion;
+    private string? _ignoredSuggestionKey;
     private IJSObjectReference? _connectivityModule;
     private IJSObjectReference? _connectivityRegistration;
     private DotNetObjectReference<SubmitReport>? _dotNetReference;
 
-    private string PipelineStatusText => _pipelinePreview is null
-        ? "Structuring evidence, comparing policy commitments, checking safety, and preparing a draft brief."
-        : "Evidence is structured, policy comparison is visible, and validators can inspect the full pipeline.";
-
-    private static readonly IReadOnlyList<(string Title, string Description)> PreviewSteps =
-    [
-        ("Agent 1 - Evidence Structuring", "Extracting location, actors, issue type, and urgency."),
-        ("Agent 2 - Policy RAG Comparison", "Comparing testimony with seeded OSF-relevant commitments."),
-        ("Agent 3 - Safety and Ethics Review", "Checking consent, sensitivity, and escalation risk."),
-        ("Agent 4 - Accountability Brief Generation", "Drafting institution-ready accountability intelligence.")
-    ];
-
     private RegionProfileDto? CurrentRegion =>
         _regions.FirstOrDefault(region => region.Code == _model.RegionCode);
 
-    private IReadOnlyList<LanguageOptionDto> CurrentLanguages =>
-        CurrentRegion?.Languages ?? [new LanguageOptionDto { Code = "en", Name = "English", IsDefault = true }];
-
     protected override async Task OnInitializedAsync()
     {
+        await Language.InitializeAsync(JsRuntime);
+        Language.LanguageChanged += HandleLanguageChanged;
+        _model = _model with { LanguageCode = Language.CurrentLanguage };
+
         _regions = await ApiClient.GetRegionsAsync();
         _pendingCount = await OfflineQueue.GetPendingCountAsync();
         var defaultRegion = _regions.FirstOrDefault(region => region.Code == _model.RegionCode) ?? _regions.FirstOrDefault();
@@ -229,9 +201,7 @@
             _model = _model with
             {
                 RegionCode = defaultRegion.Code,
-                LanguageCode = defaultRegion.Languages.FirstOrDefault(language => language.IsDefault)?.Code
-                    ?? defaultRegion.Languages.FirstOrDefault()?.Code
-                    ?? "en"
+                LanguageCode = Language.CurrentLanguage
             };
         }
     }
@@ -270,13 +240,10 @@
             var languageCode = _model.LanguageCode;
             var successMessage = T("Submit.SuccessDetail");
             Snackbar.Add(T("Submit.Success"), Severity.Success);
-            _lastSubmittedReport = report;
-            _pipelinePreview = null;
-            _isPipelineLoading = true;
             _model = _model with { Description = string.Empty, LocationName = string.Empty };
+            _issueSuggestion = null;
             _isSubmitting = false;
             StateHasChanged();
-            var pipelineTask = LoadPipelinePreviewAsync(report.Id);
             await Task.Yield();
             await ShowFeedbackAsync(
                 Text.Text(languageCode, "Submit.SuccessTitle"),
@@ -284,7 +251,7 @@
                 Icons.Material.Filled.CheckCircle,
                 Color.Success,
                 Text.Text(languageCode, "Common.Ok"));
-            await pipelineTask;
+            Navigation.NavigateTo("/reports");
         }
         catch
         {
@@ -294,6 +261,7 @@
             var offlineMessage = _isOnline ? T("Submit.SubmitFailed") : T("Submit.SavedOffline");
             Snackbar.Add(offlineMessage, Severity.Warning);
             _model = _model with { Description = string.Empty, LocationName = string.Empty };
+            _issueSuggestion = null;
             _isSubmitting = false;
             StateHasChanged();
             await Task.Yield();
@@ -307,23 +275,6 @@
         finally
         {
             _isSubmitting = false;
-        }
-    }
-
-    private async Task LoadPipelinePreviewAsync(Guid reportId)
-    {
-        try
-        {
-            _pipelinePreview = await ApiClient.GetPipelineResultAsync(reportId);
-        }
-        catch
-        {
-            _errorMessage = "The report was submitted, but the pipeline preview could not be loaded yet.";
-        }
-        finally
-        {
-            _isPipelineLoading = false;
-            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -342,7 +293,6 @@
 
     private async Task SyncPendingAsync()
     {
-        _isSyncing = true;
         _errorMessage = null;
 
         try
@@ -355,33 +305,54 @@
             Snackbar.Add(syncMessage, result.Remaining == 0 ? Severity.Success : Severity.Warning);
             await ShowFeedbackAsync(T("Submit.SyncTitle"), syncMessage, Icons.Material.Filled.Sync, Color.Success, T("Common.Ok"));
         }
-        finally
+        catch
         {
-            _isSyncing = false;
+            _errorMessage = T("Submit.SubmitFailed");
+            Snackbar.Add(_errorMessage, Severity.Warning);
         }
     }
 
     private void OnRegionChanged(string regionCode)
     {
-        var region = _regions.FirstOrDefault(item => item.Code == regionCode);
-        var languageCode = region?.Languages.FirstOrDefault(language => language.IsDefault)?.Code
-            ?? region?.Languages.FirstOrDefault()?.Code
-            ?? _model.LanguageCode
-            ?? "en";
-
         _model = _model with
         {
-            RegionCode = regionCode,
-            LanguageCode = languageCode
+            RegionCode = regionCode
         };
 
         _validationErrors.Clear();
     }
 
-    private void OnLanguageChanged(string languageCode)
+    private void OnDescriptionChanged(string value)
     {
-        _model = _model with { LanguageCode = languageCode };
+        _model.Description = value;
+        UpdateIssueSuggestion();
+    }
+
+    private void UpdateIssueSuggestion()
+    {
+        var suggestion = IssueTypeInference.Infer(_model.Description);
+        _issueSuggestion = SuggestionKey(suggestion) == _ignoredSuggestionKey ? null : suggestion;
+    }
+
+    private void UseIssueSuggestion(IssueType issueType)
+    {
+        _model.IssueTypeHint = issueType;
+        _ignoredSuggestionKey = null;
+        _issueSuggestion = null;
         _validationErrors.Clear();
+    }
+
+    private void IgnoreIssueSuggestion()
+    {
+        _ignoredSuggestionKey = SuggestionKey(_issueSuggestion);
+        _issueSuggestion = null;
+    }
+
+    private static string? SuggestionKey(IssueTypeInferenceResultDto? suggestion)
+    {
+        return suggestion?.SuggestedType is null
+            ? null
+            : $"{suggestion.SuggestedType}:{string.Join("|", suggestion.Signals)}";
     }
 
     private bool ValidateForm()
@@ -402,13 +373,31 @@
         {
             _validationErrors.Add(T("Submit.DescriptionTooLong"));
         }
+        else if (_model.IssueTypeHint is null or IssueType.Other)
+        {
+            _validationErrors.Add(T("Submit.IssueTypeRequired"));
+        }
 
         return _validationErrors.Count == 0;
     }
 
     private string T(string key) => Text.Text(_model.LanguageCode, key);
 
+    private void HandleLanguageChanged()
+    {
+        _model = _model with { LanguageCode = Language.CurrentLanguage };
+        _validationErrors.Clear();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     private string RequiredLabel(string key) => $"{T(key)} *";
+
+    private Severity SuggestionSeverity => _issueSuggestion?.Tier switch
+    {
+        ConfidenceTier.High => Severity.Success,
+        ConfidenceTier.Medium => Severity.Info,
+        _ => Severity.Warning
+    };
 
     private async Task ShowFeedbackAsync(string title, string message, string icon, Color iconColor, string okText)
     {
@@ -432,14 +421,29 @@
         await dialog.Result;
     }
 
-    private string RegionDescription(string regionCode) =>
-        Text.Text(_model.LanguageCode, $"Region.{regionCode}.Description");
+    private async Task OpenUssdDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = false,
+            CloseButton = true
+        };
 
-    private string RegionPathways(string regionCode) =>
-        Text.Text(_model.LanguageCode, $"Region.{regionCode}.Pathways");
+        var parameters = new DialogParameters<UssdIntakeDialog>
+        {
+            { dialog => dialog.LanguageCode, _model.LanguageCode },
+            { dialog => dialog.RegionCode, _model.RegionCode }
+        };
+
+        var dialog = await DialogService.ShowAsync<UssdIntakeDialog>(T("Submit.UseUssd"), parameters, options);
+        await dialog.Result;
+    }
 
     public async ValueTask DisposeAsync()
     {
+        Language.LanguageChanged -= HandleLanguageChanged;
+
         if (_connectivityRegistration is not null)
         {
             await _connectivityRegistration.InvokeVoidAsync("dispose");

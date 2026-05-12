@@ -2,20 +2,25 @@
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @layout ClientAppLayout
 @implements IAsyncDisposable
+@using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
 @inject IJSRuntime JsRuntime
+@inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.AppLanguageService Language
+@inject Services.UiTextService Text
 
-<PageTitle>Peace Map | Ubuntu Sentinel</PageTitle>
+<PageTitle>@T("Map.Title") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
     <section class="hero-band dashboard-hero">
         <div>
-            <p class="eyebrow">Dual-zone intelligence</p>
-            <h1>Conflict and resilience map</h1>
-            <p class="lede">Ubuntu Sentinel maps where accountability is failing and where community peace systems are working.</p>
+            <p class="eyebrow">@T("Map.Eyebrow")</p>
+            <h1>@T("Map.Title")</h1>
+            <p class="lede">@T("Map.Lede")</p>
         </div>
         <div class="map-legend">
-            <span><i class="zone-dot conflict-dot"></i> Conflict zone</span>
-            <span><i class="zone-dot resilience-dot"></i> Resilience zone</span>
+            <span><i class="zone-dot conflict-dot"></i> @T("Map.ConflictZone")</span>
+            <span><i class="zone-dot resilience-dot"></i> @T("Map.ResilienceZone")</span>
         </div>
     </section>
 
@@ -27,11 +32,11 @@
             <h2>@_selected.Name</h2>
             <p>@_selected.Summary</p>
             <dl>
-                <dt>Region</dt>
+                <dt>@T("Common.Region")</dt>
                 <dd>@_selected.Region</dd>
-                <dt>Evidence</dt>
+                <dt>@T("Map.Evidence")</dt>
                 <dd>@_selected.Evidence</dd>
-                <dt>Signal</dt>
+                <dt>@T("Map.Signal")</dt>
                 <dd>@_selected.Signal</dd>
             </dl>
         </article>
@@ -41,6 +46,7 @@
 @code {
     private const string MapElementId = "peace-map-canvas";
     private ZoneView _selected = default!;
+    private string _language = "en";
     private IJSObjectReference? _mapModule;
     private DotNetObjectReference<PeaceMap>? _dotNetReference;
 
@@ -52,8 +58,18 @@
         new("Resilience", "Youth early-warning circle", "Mozambique", "Community resilience", "Youth organizers coordinate alerts and safe routes during recovery periods.", "Youth-led resilience", -18.7, 35.5, "R", "resilience-zone")
     ];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        await Language.InitializeAsync(JsRuntime);
+        _language = Language.CurrentLanguage;
+        Language.LanguageChanged += HandleLanguageChanged;
+
+        var reports = await ApiClient.GetReportsAsync();
+        foreach (var report in reports.Take(12))
+        {
+            _zones.Add(FromReport(report, _zones.Count));
+        }
+
         _selected = _zones[0];
     }
 
@@ -83,6 +99,8 @@
 
     public async ValueTask DisposeAsync()
     {
+        Language.LanguageChanged -= HandleLanguageChanged;
+
         if (_mapModule is not null)
         {
             await _mapModule.InvokeVoidAsync("disposePeaceMap", MapElementId);
@@ -90,6 +108,14 @@
         }
 
         _dotNetReference?.Dispose();
+    }
+
+    private string T(string key) => Text.Text(_language, key);
+
+    private void HandleLanguageChanged()
+    {
+        _language = Language.CurrentLanguage;
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private sealed record ZoneView(
@@ -103,4 +129,42 @@
         double Longitude,
         string Label,
         string CssClass);
+
+    private static ZoneView FromReport(ReportDto report, int index)
+    {
+        var isResilience = report.IssueType is IssueType.MediationSuccess or IssueType.CommunityResilience or IssueType.RecoveryNeed;
+        var (lat, lng, region) = RegionPoint(report.RegionCode);
+        var offset = ((index % 5) - 2) * 0.18;
+
+        return new ZoneView(
+            isResilience ? "Resilience" : "Conflict",
+            report.Location.Name,
+            region,
+            FormatIssue(report.IssueType),
+            report.Description,
+            $"Live report · {report.Status} · {report.Urgency}",
+            lat + offset,
+            lng + offset,
+            isResilience ? "R" : "C",
+            isResilience ? "resilience-zone" : "conflict-zone");
+    }
+
+    private static (double Latitude, double Longitude, string Region) RegionPoint(string regionCode) => regionCode switch
+    {
+        "drc" => (-1.6, 29.2, "Eastern DRC"),
+        "sudan" => (13.8, 30.2, "Sudan"),
+        "mozambique" => (-18.7, 35.5, "Mozambique"),
+        _ => (14.5, -3.5, "Sahel")
+    };
+
+    private static string FormatIssue(IssueType issueType) => issueType switch
+    {
+        IssueType.BrokenPromise => "Broken promise",
+        IssueType.ResourceConflict => "Resource conflict",
+        IssueType.SecurityConcern => "Security concern",
+        IssueType.EnvironmentalHarm => "Environmental harm",
+        IssueType.MediationSuccess => "Mediation success",
+        IssueType.CommunityResilience => "Community resilience",
+        _ => issueType.ToString()
+    };
 }

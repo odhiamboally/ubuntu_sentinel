@@ -11,6 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="data\policy-documents.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="data\region-profiles.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Application\US.Application\US.Application.csproj" />
     <ProjectReference Include="..\..\Domain\US.Domain\US.Domain.csproj" />
     <ProjectReference Include="..\..\Infrastructure\US.Infrastructure\US.Infrastructure.csproj" />

@@ -1,15 +1,20 @@
 using System.Collections.Concurrent;
 using US.SharedKernel.Contracts.Reports;
 using US.SharedKernel.Enums;
+using US.SharedKernel.Inference;
 
 namespace US.Api.Features.Reports;
 
-public sealed class InMemoryReportStore : IReportStore
+public sealed class InMemoryReportStore(IssueTypeInferenceService issueTypeInference) : IReportStore
 {
     private readonly ConcurrentDictionary<Guid, ReportDto> _reports = new();
 
     public Task<ReportDto> CreateAsync(SubmitReportRequest request, CancellationToken cancellationToken)
     {
+        var inference = issueTypeInference.Infer(request.Description);
+        var userSelectedIssueType = request.IssueTypeHint is null or IssueType.Other ? null : request.IssueTypeHint;
+        var issueType = ResolveIssueType(userSelectedIssueType, inference);
+
         var report = new ReportDto
         {
             Id = Guid.NewGuid(),
@@ -21,8 +26,8 @@ public sealed class InMemoryReportStore : IReportStore
             },
             RegionCode = request.RegionCode.Trim().ToLowerInvariant(),
             LanguageCode = request.LanguageCode.Trim().ToLowerInvariant(),
-            IssueType = request.IssueTypeHint ?? IssueType.Other,
-            Urgency = InferUrgency(request.Description),
+            IssueType = issueType,
+            Urgency = request.UrgencyHint ?? InferUrgency(request.Description),
             Status = ReportStatus.PendingValidation,
             Actors = new CommunityActorDto
             {
@@ -35,12 +40,34 @@ public sealed class InMemoryReportStore : IReportStore
                 InternalConsistency = ConfidenceLevel.Medium,
                 Overall = 0.62m
             },
+            UserSelectedIssueType = userSelectedIssueType,
+            IssueTypeInference = inference,
             IsSensitive = request.IsSensitive,
             SubmittedAt = DateTimeOffset.UtcNow
         };
 
         _reports[report.Id] = report;
         return Task.FromResult(report);
+    }
+
+    private static IssueType ResolveIssueType(IssueType? userSelectedIssueType, IssueTypeInferenceResultDto inference)
+    {
+        if (inference is { SuggestedType: { } suggestedType, Tier: ConfidenceTier.High })
+        {
+            return suggestedType;
+        }
+
+        if (userSelectedIssueType is { } selected && inference.Tier == ConfidenceTier.Low)
+        {
+            return selected;
+        }
+
+        if (inference.SuggestedType is { } inferred)
+        {
+            return inferred;
+        }
+
+        return userSelectedIssueType ?? IssueType.Other;
     }
 
     public Task<IReadOnlyList<ReportDto>> GetAllAsync(CancellationToken cancellationToken)
@@ -58,14 +85,14 @@ public sealed class InMemoryReportStore : IReportStore
         return Task.FromResult(report);
     }
 
-    public Task<ReportDto?> UpdateValidationAsync(Guid id, ValidationDecision decision, string? notes, CancellationToken cancellationToken)
+    public Task<ReportDto?> UpdateValidationAsync(Guid id, ValidateReportRequest request, CancellationToken cancellationToken)
     {
         if (!_reports.TryGetValue(id, out var report))
         {
             return Task.FromResult<ReportDto?>(null);
         }
 
-        var status = decision switch
+        var status = request.Decision switch
         {
             ValidationDecision.Approve => ReportStatus.Approved,
             ValidationDecision.NeedsFollowUp => ReportStatus.NeedsFollowUp,
@@ -76,9 +103,12 @@ public sealed class InMemoryReportStore : IReportStore
         var updated = report with
         {
             Status = status,
-            ValidationDecision = decision,
-            ValidatorNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
-            ValidatedAt = DateTimeOffset.UtcNow
+            ValidationDecision = request.Decision,
+            ValidatorNotes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            ValidatedAt = DateTimeOffset.UtcNow,
+            ValidationChecks = request.Decision == ValidationDecision.Reject
+                ? new ValidationChecksDto()
+                : request.Checks
         };
 
         _reports[id] = updated;

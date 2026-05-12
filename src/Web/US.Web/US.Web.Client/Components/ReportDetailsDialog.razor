@@ -1,0 +1,126 @@
+@using MudBlazor
+@using US.SharedKernel.Contracts.Reports
+@using US.SharedKernel.Enums
+@inject Services.UiTextService Text
+
+<MudDialog Class="review-dialog">
+    <TitleContent>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h6">@T("Reports.DetailsTitle")</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Reports.DetailsSubtitle")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12">
+                <div class="review-badge-row">
+                    <div class="review-meta-item">
+                        <span>@T("Common.Region")</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@RegionLabel(Report.RegionCode)</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.Location")</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default">@Report.Location.Name</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.IssueType")</span>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@Text.IssueType(Language, Report.IssueType)</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.Urgency")</span>
+                        <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(Report.Urgency)" Variant="Variant.Filled">@Text.Urgency(Language, Report.Urgency)</MudChip>
+                    </div>
+                    <div class="review-meta-item">
+                        <span>@T("Common.Status")</span>
+                        <MudChip T="string" Size="Size.Small" Color="@StatusColor(Report.Status)" Variant="Variant.Filled">@Text.Status(Language, Report.Status)</MudChip>
+                    </div>
+                </div>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Submit.WhatHappened")</MudText>
+                <MudPaper Class="review-description" Elevation="0">@DisplayDescription</MudPaper>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudText Typo="Typo.subtitle2">@T("Validate.Checklist")</MudText>
+                <div class="validation-gate-checks report-readonly-checks">
+                    @foreach (var check in ValidationGateChecks)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="@(check.Done ? Color.Success : Color.Default)" Variant="Variant.Filled" Icon="@(check.Done ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">
+                            @check.Label
+                        </MudChip>
+                    }
+                </div>
+            </MudItem>
+
+            @if (!string.IsNullOrWhiteSpace(Report.ValidatorNotes))
+            {
+                <MudItem xs="12">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@T("Validate.Notes")</MudText>
+                    <MudPaper Class="review-description" Elevation="0">@Report.ValidatorNotes</MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Close">@T("Common.Close")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public ReportDto Report { get; set; } = default!;
+
+    [Parameter]
+    public string Language { get; set; } = "en";
+
+    private string DisplayDescription => Report.IsSensitive && !SensitiveHandlingCleared
+        ? T("Reports.SensitiveHidden")
+        : Report.Description;
+
+    private bool SensitiveHandlingCleared =>
+        Report.ValidationChecks.ConsentConfirmed
+        && Report.ValidationChecks.ReporterSafetyChecked
+        && Report.Status is ReportStatus.Approved or ReportStatus.NeedsFollowUp;
+
+    private IReadOnlyList<(string Label, bool Done)> ValidationGateChecks =>
+    [
+        (T("Validate.ConsentCheck"), Report.ValidationChecks.ConsentConfirmed),
+        (T("Validate.LocationCheck"), Report.ValidationChecks.LocationConfidenceChecked),
+        (T("Validate.EvidenceCheck"), Report.ValidationChecks.EvidenceQualityChecked),
+        (T("Validate.SafetyCheck"), Report.ValidationChecks.ReporterSafetyChecked)
+    ];
+
+    private void Close() => MudDialog.Close();
+
+    private string T(string key) => Text.Text(Language, key);
+
+    private static string RegionLabel(string regionCode) => regionCode switch
+    {
+        "drc" => "Eastern DRC",
+        "sahel" => "Sahel",
+        "sudan" => "Sudan",
+        "mozambique" => "Mozambique",
+        _ => regionCode.ToUpperInvariant()
+    };
+
+    private static Color StatusColor(ReportStatus status) => status switch
+    {
+        ReportStatus.Approved => Color.Success,
+        ReportStatus.NeedsFollowUp => Color.Warning,
+        ReportStatus.Rejected => Color.Error,
+        _ => Color.Info
+    };
+
+    private static Color UrgencyColor(UrgencyLevel urgency) => urgency switch
+    {
+        UrgencyLevel.Critical => Color.Error,
+        UrgencyLevel.High => Color.Warning,
+        UrgencyLevel.Low => Color.Success,
+        _ => Color.Info
+    };
+}

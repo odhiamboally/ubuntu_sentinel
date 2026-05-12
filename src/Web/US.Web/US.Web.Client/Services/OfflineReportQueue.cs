@@ -90,6 +90,7 @@ public sealed class OfflineReportQueue(IJSRuntime jsRuntime, UbuntuSentinelApiCl
             RegionCode = request.RegionCode,
             LanguageCode = request.LanguageCode,
             IssueTypeHint = request.IssueTypeHint,
+            UrgencyHint = request.UrgencyHint,
             WomenLed = request.WomenLed,
             YouthLed = request.YouthLed,
             IsSensitive = request.IsSensitive

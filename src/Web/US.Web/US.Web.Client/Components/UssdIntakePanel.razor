@@ -1,0 +1,145 @@
+@using US.SharedKernel.Contracts.Intake
+@inject Services.UbuntuSentinelApiClient ApiClient
+@inject Services.UiTextService Text
+@inject ISnackbar Snackbar
+
+<section class="ussd-layout @Class">
+    <article class="phone-shell">
+        <div class="phone-top">
+            <span>Ubuntu Sentinel</span>
+            <strong>*384#</strong>
+        </div>
+        <div class="ussd-screen">
+            <pre>@_screenText</pre>
+        </div>
+        <div class="ussd-input-row">
+            <MudTextField T="string"
+                          @bind-Value="_input"
+                          Placeholder="@T("Ussd.Reply")"
+                          Class="ussd-reply-field"
+                          Margin="Margin.Dense"
+                          Variant="Variant.Filled"
+                          Disabled="@_isTerminal" />
+            <MudButton OnClick="SendAsync"
+                       Disabled="@_isSending"
+                       Size="Size.Small"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary">
+                @T("Ussd.Send")
+            </MudButton>
+        </div>
+        <div class="ussd-actions">
+            <MudButton OnClick="StartAsync" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">@T("Ussd.StartSession")</MudButton>
+            <MudButton OnClick="Reset" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">@T("Ussd.Reset")</MudButton>
+        </div>
+    </article>
+</section>
+
+@code {
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> ReportSubmitted { get; set; }
+
+    [Parameter]
+    public string LanguageCode { get; set; } = "en";
+
+    [Parameter]
+    public string RegionCode { get; set; } = "sahel";
+
+    private string _sessionId = Guid.NewGuid().ToString("N");
+    private string _phoneNumber = "+254700123456";
+    private string _input = string.Empty;
+    private string _path = string.Empty;
+    private string _screenText = string.Empty;
+    private bool _isSending;
+    private bool _isTerminal;
+    private bool _hasSessionStarted;
+    private Guid? _lastReportId;
+
+    protected override void OnParametersSet()
+    {
+        if (!_hasSessionStarted)
+        {
+            _screenText = T("Ussd.InitialScreen");
+        }
+    }
+
+    private async Task StartAsync()
+    {
+        _sessionId = Guid.NewGuid().ToString("N");
+        _path = string.Empty;
+        _input = string.Empty;
+        _isTerminal = false;
+        _hasSessionStarted = true;
+        _lastReportId = null;
+        await SendRequestAsync();
+    }
+
+    private async Task SendAsync()
+    {
+        if (_isTerminal)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_input))
+        {
+            _path = string.IsNullOrWhiteSpace(_path) ? _input.Trim() : $"{_path}*{_input.Trim()}";
+        }
+
+        _input = string.Empty;
+        await SendRequestAsync();
+    }
+
+    private async Task SendRequestAsync()
+    {
+        _isSending = true;
+
+        try
+        {
+            var response = await ApiClient.SendUssdAsync(new UssdSessionRequest
+            {
+                SessionId = _sessionId,
+                PhoneNumber = _phoneNumber,
+                ServiceCode = "*384#",
+                Text = _path,
+                RegionCode = RegionCode,
+                LanguageCode = LanguageCode
+            });
+
+            _screenText = response.Message;
+            _isTerminal = response.IsTerminal;
+            _lastReportId = response.ReportId;
+
+            if (response.ReportId is { } reportId)
+            {
+                Snackbar.Add(T("Ussd.ReportQueued"), Severity.Success);
+                await ReportSubmitted.InvokeAsync(reportId);
+            }
+        }
+        catch
+        {
+            _screenText = T("Ussd.GatewayUnavailable");
+            _isTerminal = false;
+        }
+        finally
+        {
+            _isSending = false;
+        }
+    }
+
+    private void Reset()
+    {
+        _sessionId = Guid.NewGuid().ToString("N");
+        _input = string.Empty;
+        _path = string.Empty;
+        _screenText = T("Ussd.InitialScreen");
+        _isTerminal = false;
+        _hasSessionStarted = false;
+        _lastReportId = null;
+    }
+
+    private string T(string key) => Text.Text(LanguageCode, key);
+}

@@ -1,158 +1,46 @@
 @page "/intake/ussd"
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 @layout ClientAppLayout
-@using US.SharedKernel.Contracts.Intake
-@inject Services.UbuntuSentinelApiClient ApiClient
-@inject NavigationManager Navigation
+@implements IDisposable
+@inject Services.AppLanguageService Language
+@inject Services.UiTextService Text
+@inject IJSRuntime JsRuntime
 
-<PageTitle>USSD Intake | Ubuntu Sentinel</PageTitle>
+<PageTitle>@T("Ussd.Title") | Ubuntu Sentinel</PageTitle>
 
 <main class="page-shell">
     <section class="hero-band dashboard-hero">
         <div>
-            <p class="eyebrow">Field intake</p>
-            <h1>USSD community intake simulator</h1>
-            <p class="lede">A feature-phone style flow for communities without smartphones or stable internet. The simulator posts to a real USSD-shaped API endpoint.</p>
+            <p class="eyebrow">@T("Ussd.FieldIntake")</p>
+            <h1>@T("Ussd.SimulatorTitle")</h1>
+            <p class="lede">@T("Ussd.SimulatorLede")</p>
         </div>
-        <MudButton Href="/submit" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">Use web form</MudButton>
+        <MudButton Href="/submit" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">@T("Ussd.UseWebForm")</MudButton>
     </section>
 
-    <section class="ussd-layout">
-        <article class="phone-shell">
-            <div class="phone-top">
-                <span>Ubuntu Sentinel</span>
-                <strong>*384#</strong>
-            </div>
-            <div class="ussd-screen">
-                <pre>@_screenText</pre>
-            </div>
-            <div class="ussd-input-row">
-                <MudTextField T="string"
-                              @bind-Value="_input"
-                              Placeholder="Reply"
-                              Class="ussd-reply-field"
-                              Margin="Margin.Dense"
-                              Variant="Variant.Filled"
-                              Disabled="@_isTerminal" />
-                <MudButton OnClick="SendAsync"
-                           Disabled="@_isSending"
-                           Size="Size.Small"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary">
-                    Send
-                </MudButton>
-            </div>
-            <div class="ussd-actions">
-                <MudButton OnClick="StartAsync" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">Start session</MudButton>
-                <MudButton OnClick="Reset" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">Reset</MudButton>
-            </div>
-        </article>
-
-        <article class="context-panel">
-            <p class="eyebrow">Demo path</p>
-            <h2>Suggested sequence</h2>
-            <ol class="demo-steps">
-                <li>Start session.</li>
-                <li>Choose <strong>1</strong> for broken promise or harm.</li>
-                <li>Choose <strong>1</strong> for Sahel.</li>
-                <li>Enter a village or landmark.</li>
-                <li>Choose <strong>1</strong> for broken promise.</li>
-                <li>Describe the mining or water commitment gap.</li>
-            </ol>
-            @if (_lastReportId is not null)
-            {
-                <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Dense="true">
-                    Report queued for validation.
-                </MudAlert>
-                <MudButton OnClick="@(() => Navigation.NavigateTo("/reports"))"
-                           Size="Size.Small"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary">
-                    Open reports
-                </MudButton>
-                <MudButton OnClick="@(() => Navigation.NavigateTo($"/reports/{_lastReportId}/pipeline"))"
-                           Size="Size.Small"
-                           Variant="Variant.Outlined"
-                           Color="Color.Primary">
-                    View pipeline
-                </MudButton>
-            }
-        </article>
-    </section>
+    <UssdIntakePanel LanguageCode="@_language" />
 </main>
 
 @code {
-    private string _sessionId = Guid.NewGuid().ToString("N");
-    private string _phoneNumber = "+254700123456";
-    private string _input = string.Empty;
-    private string _path = string.Empty;
-    private string _screenText = "Dial *384# and start session.";
-    private bool _isSending;
-    private bool _isTerminal;
-    private Guid? _lastReportId;
+    private string _language = "en";
 
-    private async Task StartAsync()
+    protected override async Task OnInitializedAsync()
     {
-        _sessionId = Guid.NewGuid().ToString("N");
-        _path = string.Empty;
-        _input = string.Empty;
-        _isTerminal = false;
-        _lastReportId = null;
-        await SendRequestAsync();
+        await Language.InitializeAsync(JsRuntime);
+        _language = Language.CurrentLanguage;
+        Language.LanguageChanged += HandleLanguageChanged;
     }
 
-    private async Task SendAsync()
+    private string T(string key) => Text.Text(_language, key);
+
+    private void HandleLanguageChanged()
     {
-        if (_isTerminal)
-        {
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(_input))
-        {
-            _path = string.IsNullOrWhiteSpace(_path) ? _input.Trim() : $"{_path}*{_input.Trim()}";
-        }
-
-        _input = string.Empty;
-        await SendRequestAsync();
+        _language = Language.CurrentLanguage;
+        _ = InvokeAsync(StateHasChanged);
     }
 
-    private async Task SendRequestAsync()
+    public void Dispose()
     {
-        _isSending = true;
-
-        try
-        {
-            var response = await ApiClient.SendUssdAsync(new UssdSessionRequest
-            {
-                SessionId = _sessionId,
-                PhoneNumber = _phoneNumber,
-                ServiceCode = "*384#",
-                Text = _path
-            });
-
-            _screenText = response.Message;
-            _isTerminal = response.IsTerminal;
-            _lastReportId = response.ReportId;
-        }
-        catch
-        {
-            _screenText = "USSD gateway unavailable. Confirm US.Api is running on http://localhost:5138, then start the session again.";
-            _isTerminal = false;
-        }
-        finally
-        {
-            _isSending = false;
-        }
-    }
-
-    private void Reset()
-    {
-        _sessionId = Guid.NewGuid().ToString("N");
-        _input = string.Empty;
-        _path = string.Empty;
-        _screenText = "Dial *384# and start session.";
-        _isTerminal = false;
-        _lastReportId = null;
+        Language.LanguageChanged -= HandleLanguageChanged;
     }
 }

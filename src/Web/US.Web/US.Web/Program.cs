@@ -1,5 +1,6 @@
 using MudBlazor.Services;
 using US.Web.Components;
+using US.Web.Client.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();
 builder.Services.AddMudServices();
+builder.Services.AddScoped<AppLanguageService>();
+builder.Services.AddSingleton<UiTextService>();
 
 var app = builder.Build();
 

@@ -1,0 +1,124 @@
+[
+  {
+    "code": "drc",
+    "name": "Eastern DRC",
+    "description": "Community accountability and reparative justice workflows for mining, displacement, security, and service-delivery commitments.",
+    "escalationSummary": "Local peace committee -> Provincial authority -> OSF partner review -> Regional body briefing",
+    "languages": [
+      { "code": "en", "name": "English" },
+      { "code": "fr", "name": "French", "isDefault": true },
+      { "code": "sw", "name": "Swahili" }
+    ],
+    "priorityIssueTypes": ["BrokenPromise", "ResourceConflict", "ServiceGap", "EnvironmentalHarm", "SecurityConcern"],
+    "regionalBodies": ["African Union", "EAC"],
+    "escalationPathways": ["Local peace committee", "Provincial authority", "OSF partner review", "Regional body briefing"],
+    "relevantSources": [
+      {
+        "title": "Constitution of the Democratic Republic of Congo",
+        "type": "National constitution",
+        "sourceUrl": "https://www.constituteproject.org/constitution/Democratic_Republic_of_the_Congo_2011"
+      },
+      {
+        "title": "Democratic Republic of Congo Mining Code",
+        "type": "Mining code",
+        "sourceUrl": "https://eiti.org/documents/mining-code-democratic-republic-congo"
+      },
+      {
+        "title": "African Charter on Human and Peoples' Rights",
+        "type": "Regional human rights treaty",
+        "sourceUrl": "https://achpr.au.int/en/node/641"
+      }
+    ]
+  },
+  {
+    "code": "sahel",
+    "name": "Sahel",
+    "description": "Low-bandwidth civic evidence workflows for communities affected by insecurity, displacement, resource pressure, and governance exclusion.",
+    "escalationSummary": "Community validator -> Civil society partner -> ECOWAS policy channel",
+    "languages": [
+      { "code": "fr", "name": "French", "isDefault": true },
+      { "code": "ar", "name": "Arabic" },
+      { "code": "en", "name": "English" }
+    ],
+    "priorityIssueTypes": ["SecurityConcern", "GovernanceFailure", "ResourceConflict", "CommunityResilience"],
+    "regionalBodies": ["African Union", "ECOWAS"],
+    "escalationPathways": ["Community validator", "Civil society partner", "ECOWAS policy channel"],
+    "relevantSources": [
+      {
+        "title": "Mali Agreement for Peace and Reconciliation",
+        "type": "Peace agreement",
+        "sourceUrl": "https://www.un.int/mali/mali/processus-de-paix-intermalien"
+      },
+      {
+        "title": "African Charter on Human and Peoples' Rights",
+        "type": "Regional human rights treaty",
+        "sourceUrl": "https://achpr.au.int/en/node/641"
+      },
+      {
+        "title": "African Union Convention on Preventing and Combating Corruption",
+        "type": "Regional anti-corruption convention",
+        "sourceUrl": "https://au.int/en/treaties/african-union-convention-preventing-and-combating-corruption"
+      }
+    ]
+  },
+  {
+    "code": "sudan",
+    "name": "Sudan",
+    "description": "Anonymity-aware reporting for communities documenting displacement, security harms, humanitarian access gaps, and recovery needs.",
+    "escalationSummary": "Trusted validator -> Humanitarian partner -> OSF legal or advocacy review",
+    "languages": [
+      { "code": "ar", "name": "Arabic", "isDefault": true },
+      { "code": "en", "name": "English" }
+    ],
+    "priorityIssueTypes": ["SecurityConcern", "EnvironmentalHarm", "ServiceGap", "CommunityResilience", "RecoveryNeed"],
+    "regionalBodies": ["African Union"],
+    "escalationPathways": ["Trusted validator", "Humanitarian partner", "OSF legal or advocacy review"],
+    "relevantSources": [
+      {
+        "title": "Sudan Constitutional Declaration",
+        "type": "Constitutional framework",
+        "sourceUrl": "https://constitutionnet.org/vl/item/sudans-constitutional-declaration-2019"
+      },
+      {
+        "title": "Guiding Principles on Internal Displacement",
+        "type": "Humanitarian protection framework",
+        "sourceUrl": "https://www.ohchr.org/en/special-procedures/sr-internally-displaced-persons/international-standards"
+      },
+      {
+        "title": "African Charter on Human and Peoples' Rights",
+        "type": "Regional human rights treaty",
+        "sourceUrl": "https://achpr.au.int/en/node/641"
+      },
+      {
+        "title": "African Charter Article 24 - Environment",
+        "type": "Regional environmental rights clause",
+        "sourceUrl": "https://achpr.au.int/en/node/641"
+      }
+    ]
+  },
+  {
+    "code": "mozambique",
+    "name": "Mozambique",
+    "description": "Localized reporting and accountability workflows for recovery, resource governance, community security, and resilience.",
+    "escalationSummary": "Local partner -> District authority -> SADC-aligned advocacy brief",
+    "languages": [
+      { "code": "pt", "name": "Portuguese", "isDefault": true },
+      { "code": "en", "name": "English" }
+    ],
+    "priorityIssueTypes": ["ResourceConflict", "EnvironmentalHarm", "RecoveryNeed", "CommunityResilience"],
+    "regionalBodies": ["African Union", "SADC"],
+    "escalationPathways": ["Local partner", "District authority", "SADC-aligned advocacy brief"],
+    "relevantSources": [
+      {
+        "title": "Mozambique peace and recovery commitments",
+        "type": "Recovery framework",
+        "sourceUrl": "https://www.peaceagreements.org/"
+      },
+      {
+        "title": "African Charter on Human and Peoples' Rights",
+        "type": "Regional human rights treaty",
+        "sourceUrl": "https://achpr.au.int/en/node/641"
+      }
+    ]
+  }
+]

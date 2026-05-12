@@ -1,11 +1,50 @@
 @page "/"
-@inject NavigationManager Navigation
 
 <PageTitle>Ubuntu Sentinel</PageTitle>
 
-@code {
-    protected override void OnInitialized()
-    {
-        Navigation.NavigateTo("/dashboard", replace: true);
+<main class="landing-shell">
+    <section class="landing-hero">
+        <p class="eyebrow">Ubuntu Sentinel</p>
+        <h1>Community intelligence for accountable peace</h1>
+        <p class="landing-lede">
+            A PeaceTech platform for OSF's Transformative Peace in Africa initiative: local reports become validation-gated evidence, policy comparisons, and accountability briefs that keep communities in control.
+        </p>
+
+        <div class="landing-actions" aria-label="Choose language">
+            <button type="button" onclick="setUbuntuLanguage('en')">
+                <span>English</span>
+                <strong>Get started</strong>
+            </button>
+            <button type="button" onclick="setUbuntuLanguage('fr')">
+                <span>Francais</span>
+                <strong>Commencer</strong>
+            </button>
+            <button type="button" disabled>
+                <span>العربية</span>
+                <strong>Coming soon</strong>
+            </button>
+        </div>
+    </section>
+
+    <section class="landing-proof">
+        <article>
+            <strong>Voice and accountability</strong>
+            <span>USSD, web, offline queue, and human validation for communities reporting harm or broken commitments.</span>
+        </article>
+        <article>
+            <strong>Peace and community</strong>
+            <span>Conflict and resilience signals are mapped side by side, so peace work is visible too.</span>
+        </article>
+        <article>
+            <strong>OSF alignment</strong>
+            <span>Evidence stays community-centered before any institutional escalation.</span>
+        </article>
+    </section>
+</main>
+
+<script>
+    function setUbuntuLanguage(language) {
+        localStorage.setItem('ubuntu-sentinel-language', language);
+        window.location.href = '/dashboard';
     }
-}
+</script>

@@ -2,13 +2,13 @@
 
 ## One-Line Pitch
 
-Ubuntu Sentinel is community intelligence infrastructure for transformative peace: it helps communities submit evidence through low-bandwidth channels, validate it locally, compare it against public commitments, and generate institution-ready accountability briefs.
+Ubuntu Sentinel is community intelligence infrastructure for transformative peace: it helps communities submit evidence through low-bandwidth channels, validate it locally, compare it against public commitments, and generate institution-ready accountability outputs only when the community validation gate clears.
 
 ## Track
 
 - Primary: Voice & Accountability.
 - Secondary: Peace & Community.
-- Resource justice thread: promise tracking for CDAs, mining commitments, public services, peace accords, and regional frameworks.
+- Resource justice thread: promise tracking for CDAs, mining commitments, public services, peace accords, rights frameworks, and regional institutions.
 
 ## Problem
 
@@ -18,33 +18,69 @@ Ubuntu Sentinel closes the power gap by making community knowledge structured, v
 
 ## Product Pillars
 
-1. Multi-channel community intake: web, offline PWA, USSD simulator, SMS-shaped endpoint.
+1. Multi-channel community intake: web, offline queue, USSD simulator, and webhook-shaped low-bandwidth API.
 2. Codex agentic intelligence pipeline: evidence structuring, policy comparison, safety review, brief generation.
 3. Dual-zone intelligence map: conflict zones and resilience zones.
-4. Community data sovereignty: consent, original testimony preservation, validation gate, reporter tracking.
-5. Accountability outputs: JSON and PDF-ready briefs for advocates, OSF partners, and regional bodies.
+4. Community data sovereignty: original testimony preservation, sensitivity handling, validation gate, reporter-oriented future tracking.
+5. Accountability outputs: status-aware briefs and records for advocates, OSF partners, and regional bodies.
+
+## Current Issue Taxonomy
+
+- Broken promise.
+- Resource conflict.
+- Governance failure.
+- Security concern.
+- Service gap.
+- Environmental harm.
+- Mediation success.
+- Recovery need.
+- Community resilience.
+
+Issue type may be inferred from testimony. Reporter selection is treated as a hint; pipeline and validator review preserve the raw description and surface conflicts.
+
+## Demo Policy Corpus
+
+The demo uses a versioned public-source corpus in `src/Api/US.Api/data/policy-documents.json`.
+
+Minimum active corpus:
+
+- African Charter on Human and Peoples' Rights: Articles 4, 6, 14, 16, 24.
+- Constitution of the Democratic Republic of Congo: Articles 16 and 58.
+- Democratic Republic of Congo Mining Code reform materials: community development and local benefit obligations.
+- Mali Agreement for Peace and Reconciliation: civilian protection and reconciliation commitments.
+- African Union Convention on Preventing and Combating Corruption: Article 4.
+- Sudan Constitutional Declaration: rights and freedoms provisions.
+- Guiding Principles on Internal Displacement: protection and assistance principles.
+- Mozambique peace and recovery commitments.
+
+The target architecture is pgvector/embedding retrieval over persisted policy documents. The demo path is deterministic and source-traceable.
 
 ## Demo User Journey
 
-1. A community member submits a report through the USSD simulator or web form.
-2. Offline-capable intake queues the report if connectivity fails.
-3. The report enters a four-agent pipeline.
-4. The policy comparison agent finds a seeded commitment gap.
-5. The safety agent flags consent/sensitivity needs.
-6. A community validator reviews the record and validation checks.
-7. An advocate/partner opens a validation-backed accountability brief.
-8. The map shows both conflict signals and resilience zones in the same geography.
+1. A community member chooses a language and submits a report through the USSD simulator or web form.
+2. Offline-capable web intake queues the report if connectivity fails.
+3. The report enters a four-stage pipeline.
+4. The policy comparison stage matches the report to public source clauses.
+5. The safety stage flags consent/sensitivity needs.
+6. A community validator reviews checks and enters mandatory notes.
+7. The system produces a status-aware output:
+   - draft brief while pending,
+   - follow-up brief when more information is needed,
+   - internal rejection record when rejected,
+   - validation-backed brief when approved.
+8. The map shows both conflict signals and resilience zones.
 
 ## Must-Have Demo Features
 
 - USSD-style intake simulator.
 - Web/PWA-style report submission and offline queue.
-- Seeded policy document comparison with pgvector-ready abstraction.
+- Public clause-level policy/legal corpus with sourced article references.
 - Four-agent pipeline visualization.
-- Human validation workflow with consent, location, evidence, and safety checks.
+- OpenAI-backed agent runner when configured, deterministic fallback when not configured.
+- Human validation workflow with consent, location, evidence, safety, and mandatory notes.
+- Explicit view vs validate separation.
 - Dual conflict/resilience map.
 - Accountability brief view with PDF generation or PDF-ready fallback.
-- Role-shaped navigation for Reporter, Community Validator, Advocate, and OSF Partner.
 - EN/FR localization across demo-critical pages.
 - Clear Codex usage explanation.
 
@@ -52,12 +88,13 @@ Ubuntu Sentinel closes the power gap by making community knowledge structured, v
 
 - A report can be submitted through web and USSD simulator.
 - A report can be queued offline and synced later.
-- A seeded policy/CDA comparison produces a visible promise gap.
-- The agent pipeline produces structured steps and a final brief.
-- A validator can approve, reject, or request follow-up.
-- Escalation-ready briefs require human validation.
+- A sourced clause comparison produces a visible rights, promise, or accountability gap.
+- The agent pipeline produces structured steps and status-aware outputs.
+- A validator can approve, reject, or request follow-up with mandatory notes.
+- Approval is blocked until all validation checks pass.
+- Rejected reports do not produce escalation-ready briefs.
 - Dashboard and map reflect live report/zone state.
-- The demo runs without live OpenAI, Africa's Talking, or PostgreSQL by using documented fallbacks.
+- The demo can run without live OpenAI, Africa's Talking, PostgreSQL, or PDF package surprises by using documented fallbacks.
 
 ## Explicitly Out Of Scope
 
