@@ -71,12 +71,12 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                 {
                     column.Spacing(4);
                     column.Item().Text("Ubuntu Sentinel").Bold().FontSize(18).FontColor(Palette.Brand);
-                    column.Item().Text(Localize("Accountability brief", "Brief de responsabilite"))
+                    column.Item().Text(Localize("Accountability brief", "Brief de responsabilité"))
                         .SemiBold()
                         .FontSize(20);
                     column.Item().Text(Localize(
                             "Community-led evidence, validation, and accountability output.",
-                            "Sortie de responsabilite fondee sur la preuve communautaire et la validation humaine."))
+                            "Sortie de responsabilité fondée sur la preuve communautaire et la validation humaine."))
                         .FontColor(Palette.Muted);
                 });
 
@@ -90,7 +90,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                             GetHeaderBadgeLabel(),
                             GetHeaderBadgeBackground(),
                             Colors.White));
-                        column.Item().AlignRight().Text(Localize("Generated", "Genere"))
+                        column.Item().AlignRight().Text(Localize("Generated", "Généré"))
                             .SemiBold()
                             .FontSize(8)
                             .FontColor(Palette.Muted);
@@ -114,17 +114,17 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                 {
                     column.Spacing(6);
                     column.Item().Text(_isValidationBacked
-                            ? Localize("Validation-backed brief", "Brief valide")
+                            ? Localize("Validation-backed brief", "Brief validé")
                             : Localize("Internal draft / human validation required", "Brouillon interne / validation humaine requise"))
                         .SemiBold()
                         .FontColor(accent);
                     column.Item().Text(_isValidationBacked
                             ? Localize(
                                 "This brief can support responsible partner review because consent, location, evidence, and reporter safety checks were completed.",
-                                "Ce brief peut soutenir une revue responsable parce que les controles de consentement, de lieu, de preuve et de securite ont ete completes.")
+                                "Ce brief peut soutenir une revue responsable parce que les contrôles de consentement, de lieu, de preuve et de sécurité ont été complétés.")
                             : Localize(
                                 "This PDF is structured assistance only. It does not authorize escalation until a validator completes every required check.",
-                                "Ce PDF reste une assistance structuree. Il n'autorise aucune escalation tant qu'un validateur n'a pas complete tous les controles requis."))
+                                "Ce PDF reste une assistance structurée. Il n'autorise aucune escalade tant qu'un validateur n'a pas complété tous les contrôles requis."))
                         .LineHeight(1.35f);
                 });
         }
@@ -137,13 +137,13 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                 column.Item().Row(row =>
                 {
                     row.Spacing(8);
-                    row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Community", "Communaute"), report.Location.Name));
+                    row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Community", "Communauté"), report.Location.Name));
                     row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Region", "Region"), report.RegionCode.ToUpperInvariant()));
                 });
                 column.Item().Row(row =>
                 {
                     row.Spacing(8);
-                    row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Issue type", "Type de probleme"), FormatIssueType(report.IssueType)));
+                    row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Issue type", "Type de problème"), FormatIssueType(report.IssueType)));
                     row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Urgency", "Urgence"), FormatUrgency(result.Urgency)));
                 });
                 column.Item().Row(row =>
@@ -238,21 +238,21 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
         private void ComposeValidationSection(IContainer container)
         {
-            ComposeSection(container, Localize("Validation and safety", "Validation et securite"), column =>
+            ComposeSection(container, Localize("Validation and safety", "Validation et sécurité"), column =>
             {
                 column.Item().Text(_isValidationBacked
                         ? Localize(
                             "Human validation is complete for consent, location confidence, evidence quality, and reporter safety.",
-                            "La validation humaine est complete pour le consentement, la fiabilite du lieu, la qualite des preuves et la securite du declarant.")
+                            "La validation humaine est complète pour le consentement, la fiabilité du lieu, la qualité des preuves et la sécurité du déclarant.")
                         : Localize(
                             "Keep this output internal until every validation check below is complete.",
-                            "Conservez cette sortie en interne jusqu'a ce que chaque controle ci-dessous soit complete."))
+                            "Conservez cette sortie en interne jusqu'à ce que chaque contrôle ci-dessous soit complété."))
                     .LineHeight(1.3f);
 
-                column.Item().Element(c => ComposeChecklistItem(c, Localize("Consent confirmed", "Consentement confirme"), report.ValidationChecks.ConsentConfirmed));
-                column.Item().Element(c => ComposeChecklistItem(c, Localize("Location confidence checked", "Fiabilite du lieu verifiee"), report.ValidationChecks.LocationConfidenceChecked));
-                column.Item().Element(c => ComposeChecklistItem(c, Localize("Evidence quality checked", "Qualite des preuves verifiee"), report.ValidationChecks.EvidenceQualityChecked));
-                column.Item().Element(c => ComposeChecklistItem(c, Localize("Reporter safety checked", "Securite du declarant verifiee"), report.ValidationChecks.ReporterSafetyChecked));
+                column.Item().Element(c => ComposeChecklistItem(c, Localize("Consent confirmed", "Consentement confirmé"), report.ValidationChecks.ConsentConfirmed));
+                column.Item().Element(c => ComposeChecklistItem(c, Localize("Location confidence checked", "Fiabilité du lieu vérifiée"), report.ValidationChecks.LocationConfidenceChecked));
+                column.Item().Element(c => ComposeChecklistItem(c, Localize("Evidence quality checked", "Qualité des preuves vérifiée"), report.ValidationChecks.EvidenceQualityChecked));
+                column.Item().Element(c => ComposeChecklistItem(c, Localize("Reporter safety checked", "Sécurité du déclarant vérifiée"), report.ValidationChecks.ReporterSafetyChecked));
                 column.Item().Element(c => ComposeChecklistItem(c, Localize("Sensitive handling required", "Traitement sensible requis"), report.IsSensitive, highlightWhenFalse: false));
 
                 column.Item().PaddingTop(4).Text(Localize("Validator notes", "Notes du validateur"))
@@ -261,7 +261,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                 column.Item().Background(Palette.SurfaceStrong)
                     .Padding(10)
                     .Text(string.IsNullOrWhiteSpace(report.ValidatorNotes)
-                        ? Localize("No validator notes recorded yet.", "Aucune note du validateur n'est encore enregistree.")
+                        ? Localize("No validator notes recorded yet.", "Aucune note du validateur n'est encore enregistrée.")
                         : report.ValidatorNotes)
                     .LineHeight(1.3f);
             });
@@ -269,7 +269,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
         private void ComposeTraceabilitySection(IContainer container)
         {
-            ComposeSection(container, Localize("Traceability", "Tracabilite"), column =>
+            ComposeSection(container, Localize("Traceability", "Traçabilité"), column =>
             {
                 column.Item().Text(Localize("Policy source", "Source politique"))
                     .SemiBold()
@@ -278,10 +278,10 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                 {
                     sourceColumn.Spacing(4);
                     sourceColumn.Item().Text(result.PolicyMatch is null
-                        ? Localize("No confident source clause was attached yet.", "Aucune clause source fiable n'a encore ete jointe.")
+                        ? Localize("No confident source clause was attached yet.", "Aucune clause source fiable n'a encore été jointe.")
                         : result.PolicyMatch.DocumentTitle).SemiBold();
                     sourceColumn.Item().Text(result.PolicyMatch is null
-                        ? Localize("A validator should attach the relevant commitment or rights source before escalation.", "Un validateur doit joindre l'engagement ou la source de droits pertinente avant toute escalation.")
+                        ? Localize("A validator should attach the relevant commitment or rights source before escalation.", "Un validateur doit joindre l'engagement ou la source de droits pertinente avant toute escalade.")
                         : $"{result.PolicyMatch.ArticleReference} · {result.PolicyMatch.DocumentType} · {result.PolicyMatch.Similarity:0.00}")
                         .FontColor(Palette.Muted);
 
@@ -304,7 +304,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
                     if (!string.IsNullOrWhiteSpace(result.PipelineModel))
                     {
-                        signalColumn.Item().Text($"{Localize("Model", "Modele")}: {result.PipelineModel}");
+                        signalColumn.Item().Text($"{Localize("Model", "Modèle")}: {result.PipelineModel}");
                     }
 
                     signalColumn.Item().Text($"{Localize("Flags", "Drapeaux")}: {FormatList(result.Flags, Localize("None", "Aucun"))}");
@@ -320,7 +320,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
             {
                 row.RelativeItem().Text(Localize(
                         "Ubuntu Sentinel keeps original community testimony and requires human validation before escalation.",
-                        "Ubuntu Sentinel preserve le temoignage communautaire original et exige une validation humaine avant toute escalation."))
+                        "Ubuntu Sentinel préserve le témoignage communautaire original et exige une validation humaine avant toute escalade."))
                     .FontSize(8)
                     .FontColor(Palette.Muted);
                 row.ConstantItem(110)
@@ -427,12 +427,12 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
         private string GetValidationGateLabel() => _isValidationBacked
             ? Localize("Complete", "Complet")
-            : Localize("Not escalation-ready", "Pas pret pour escalation");
+            : Localize("Not escalation-ready", "Pas prêt pour escalade");
 
         private string FormatPipelineMode() => result.PipelineMode switch
         {
-            "OpenAI-backed" => Localize("OpenAI-backed", "Appuye par OpenAI"),
-            "Deterministic fallback" => Localize("Deterministic fallback", "Secours deterministe"),
+            "OpenAI-backed" => Localize("OpenAI-backed", "Appuyé par OpenAI"),
+            "Deterministic fallback" => Localize("Deterministic fallback", "Secours déterministe"),
             _ => result.PipelineMode
         };
 
@@ -440,13 +440,13 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
         {
             (true, IssueType.BrokenPromise) => "Promesse non tenue",
             (true, IssueType.ResourceConflict) => "Conflit de ressources",
-            (true, IssueType.GovernanceFailure) => "Defaillance de gouvernance",
-            (true, IssueType.SecurityConcern) => "Probleme de securite",
+            (true, IssueType.GovernanceFailure) => "Défaillance de gouvernance",
+            (true, IssueType.SecurityConcern) => "Problème de sécurité",
             (true, IssueType.ServiceGap) => "Manque de service",
-            (true, IssueType.EnvironmentalHarm) => "Prejudice environnemental",
-            (true, IssueType.MediationSuccess) => "Succes de mediation",
-            (true, IssueType.RecoveryNeed) => "Besoin de retablissement",
-            (true, IssueType.CommunityResilience) => "Resilience communautaire",
+            (true, IssueType.EnvironmentalHarm) => "Préjudice environnemental",
+            (true, IssueType.MediationSuccess) => "Succès de médiation",
+            (true, IssueType.RecoveryNeed) => "Besoin de rétablissement",
+            (true, IssueType.CommunityResilience) => "Résilience communautaire",
             (true, _) => "Autre",
             (false, _) => issueType switch
             {
@@ -467,7 +467,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
         {
             (true, UrgencyLevel.Low) => "Faible",
             (true, UrgencyLevel.Medium) => "Moyenne",
-            (true, UrgencyLevel.High) => "Elevee",
+            (true, UrgencyLevel.High) => "Élevée",
             (true, UrgencyLevel.Critical) => "Critique",
             _ => urgency.ToString()
         };
@@ -480,8 +480,8 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
             (true, ReportStatus.Processing) => "Traitement",
             (true, ReportStatus.PendingValidation) => "En attente de validation",
             (true, ReportStatus.NeedsFollowUp) => "Suivi requis",
-            (true, ReportStatus.Approved) => "Approuve",
-            (true, ReportStatus.Rejected) => "Rejete",
+            (true, ReportStatus.Approved) => "Approuvé",
+            (true, ReportStatus.Rejected) => "Rejeté",
             _ => status switch
             {
                 ReportStatus.QueuedOffline => "Queued offline",
