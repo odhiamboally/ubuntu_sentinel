@@ -44,7 +44,7 @@ Implemented:
 - MudBlazor UI foundation.
 - Global EN/FR language selection.
 - Web report submission.
-- Browser offline queue foundation.
+- Browser offline queue with automatic sync when connectivity is available.
 - USSD simulator and webhook-shaped endpoint.
 - SignalR report updates.
 - Issue type inference with user hint support.
