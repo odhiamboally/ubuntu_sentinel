@@ -31,7 +31,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
         private readonly bool _isFrench = string.Equals(report.LanguageCode, "fr", StringComparison.OrdinalIgnoreCase);
         private readonly bool _isValidationBacked = report.Status == ReportStatus.Approved && report.ValidationChecks.IsComplete;
         private readonly BriefAudience _audience = audience;
-        private bool IsRestricted => _audience != BriefAudience.Admin;
+        private bool IsRestrictedAudience => _audience != BriefAudience.Admin;
 
         public DocumentMetadata GetMetadata() => new()
         {
@@ -55,7 +55,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                 page.Content().PaddingTop(16).Column(column =>
                 {
                     column.Spacing(10);
-                    if (IsRestricted)
+                    if (IsRestrictedAudience)
                     {
                         column.Item().Element(ComposeRestrictedNotice);
                         return;
@@ -429,7 +429,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
         private string GetHeaderBadgeLabel()
         {
-            if (IsRestricted)
+            if (IsRestrictedAudience)
             {
                 return Localize("Admin-only", "Réservé admin");
             }
@@ -451,7 +451,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
         private string GetHeaderBadgeBackground()
         {
-            if (IsRestricted)
+            if (IsRestrictedAudience)
             {
                 return Palette.Warning;
             }

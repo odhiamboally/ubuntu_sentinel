@@ -42,7 +42,7 @@
         }
     </section>
 
-    @if (!IsRestrictedView)
+    @if (!_isRestricted)
     {
         <section class="safety-note @(IsValidationBacked ? "validated-note" : null)">
             <strong>@BriefSafetyTitle</strong>
@@ -57,7 +57,7 @@
             <p>@T("Brief.GeneratingBody")</p>
         </section>
     }
-    else if (IsRestrictedView)
+    else if (_isRestricted)
     {
         <section class="empty-state">
             <h2>@T("Brief.RestrictedTitle")</h2>
@@ -223,19 +223,18 @@
     private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId, IsAdminView);
     private string BriefPdfUrl => ApiClient.GetBriefPdfUrl(ReportId, IsAdminView);
     private bool IsAdminView => Roles.IsAdmin;
-    private bool IsRestrictedView => _isRestricted;
 
     private bool IsValidationBacked =>
         _report?.Status == ReportStatus.Approved &&
         _report.ValidationChecks.IsComplete;
 
-    private string BriefTitle => IsRestrictedView
+    private string BriefTitle => _isRestricted
         ? T("Brief.RestrictedTitle")
         : IsValidationBacked
             ? T("Brief.ValidatedTitle")
             : T("Brief.DraftTitle");
 
-    private string BriefLede => IsRestrictedView
+    private string BriefLede => _isRestricted
         ? T("Brief.RestrictedBody")
         : IsValidationBacked
             ? T("Brief.ValidatedLede")
