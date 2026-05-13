@@ -24,6 +24,16 @@ public static class AccountabilityEndpoints
         })
         .WithTags("Accountability");
 
+        endpoints.MapGet("/api/openai/diagnostics", async (
+            bool? liveProbe,
+            OpenAiChatJsonClient client,
+            CancellationToken cancellationToken) =>
+        {
+            var diagnostics = await client.GetDiagnosticsAsync(liveProbe ?? false, cancellationToken);
+            return Results.Ok(diagnostics);
+        })
+        .WithTags("Accountability");
+
         endpoints.MapGet("/api/reports/{id:guid}/brief.json", async (
             Guid id,
             HttpContext httpContext,
