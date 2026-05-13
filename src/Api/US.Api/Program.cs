@@ -79,7 +79,6 @@ app.MapGet("/", () => Results.Ok(new
         "/api/reports",
         "/api/intake/ussd",
         "/api/reports/{id}/pipeline",
-        "/api/openai/diagnostics",
         "/api/reports/{id}/brief.pdf",
         "/api/policy-documents",
         "/hubs/reports"
