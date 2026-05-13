@@ -44,24 +44,6 @@ builder.Services.Configure<OpenAiPipelineOptions>(options =>
 {
     options.ApiKey = builder.Configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
     options.Model = builder.Configuration["OpenAI:Model"] ?? Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4.1-mini";
-
-    var timeoutRaw = builder.Configuration["OpenAI:RequestTimeoutSeconds"] ?? Environment.GetEnvironmentVariable("OPENAI_REQUEST_TIMEOUT_SECONDS");
-    if (int.TryParse(timeoutRaw, out var timeoutSeconds))
-    {
-        options.RequestTimeoutSeconds = timeoutSeconds;
-    }
-
-    var retriesRaw = builder.Configuration["OpenAI:MaxRetries"] ?? Environment.GetEnvironmentVariable("OPENAI_MAX_RETRIES");
-    if (int.TryParse(retriesRaw, out var maxRetries))
-    {
-        options.MaxRetries = maxRetries;
-    }
-
-    var retryDelayRaw = builder.Configuration["OpenAI:RetryBaseDelayMilliseconds"] ?? Environment.GetEnvironmentVariable("OPENAI_RETRY_BASE_DELAY_MS");
-    if (int.TryParse(retryDelayRaw, out var retryDelayMilliseconds))
-    {
-        options.RetryBaseDelayMilliseconds = retryDelayMilliseconds;
-    }
 });
 builder.Services.AddHttpClient<OpenAiChatJsonClient>();
 builder.Services.AddSingleton<DeterministicAccountabilityPipeline>();
