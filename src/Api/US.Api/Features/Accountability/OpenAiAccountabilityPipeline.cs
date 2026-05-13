@@ -11,10 +11,16 @@ public sealed class OpenAiAccountabilityPipeline(
 {
     public async Task<ReportPipelineResultDto> AnalyzeAsync(ReportDto report, CancellationToken cancellationToken)
     {
+        logger.LogInformation("OpenAI configured: {IsConfigured}, Model: {Model}", client.IsConfigured, client.Model);
+
         if (!client.IsConfigured)
         {
+            //var fallbackResult = await fallback.AnalyzeAsync(report, cancellationToken);
+            //return fallbackResult with { FallbackReason = LocalizedMissingApiKey(report.LanguageCode) };
+
+            logger.LogWarning("OpenAI not configured; using deterministic fallback.");
             var fallbackResult = await fallback.AnalyzeAsync(report, cancellationToken);
-            return fallbackResult with { FallbackReason = LocalizedMissingApiKey(report.LanguageCode) };
+            return fallbackResult with { FallbackReason = null }; // never surface to PDF
         }
 
         try
@@ -165,12 +171,16 @@ public sealed class OpenAiAccountabilityPipeline(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "OpenAI pipeline failed; falling back to deterministic accountability pipeline.");
+            //logger.LogWarning(exception, "OpenAI pipeline failed; falling back to deterministic accountability pipeline.");
+            //var fallbackResult = await fallback.AnalyzeAsync(report, cancellationToken);
+            //return fallbackResult with
+            //{
+            //    FallbackReason = LocalizedPipelineFailure(report.LanguageCode)
+            //};
+
             var fallbackResult = await fallback.AnalyzeAsync(report, cancellationToken);
-            return fallbackResult with
-            {
-                FallbackReason = LocalizedPipelineFailure(report.LanguageCode)
-            };
+            return fallbackResult with { FallbackReason = null }; // log only, never surface
+
         }
     }
 

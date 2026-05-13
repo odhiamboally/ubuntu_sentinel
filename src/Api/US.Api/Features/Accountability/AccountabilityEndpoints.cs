@@ -131,9 +131,19 @@ public static class AccountabilityEndpoints
     private static BriefAudience ResolveAudience(HttpContext httpContext)
     {
         var audience = httpContext.Request.Query["audience"].ToString();
-        return string.Equals(audience, "admin", StringComparison.OrdinalIgnoreCase)
-            ? BriefAudience.Admin
-            : BriefAudience.Restricted;
+        if (string.Equals(audience, "admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return BriefAudience.Admin;
+        }
+
+        if (string.Equals(audience, "validator", StringComparison.OrdinalIgnoreCase))
+        {
+            // Change this to whatever your Enum value is for allowed non-admins
+            // likely BriefAudience.Validator or BriefAudience.Standard
+            return BriefAudience.Validator;
+        }
+
+        return BriefAudience.Restricted;
     }
 
     private static string BuildBriefFileStem(ReportDto report)

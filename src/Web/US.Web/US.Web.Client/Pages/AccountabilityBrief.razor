@@ -28,7 +28,7 @@
             <h1>@BriefTitle</h1>
             <p class="lede">@BriefLede</p>
         </div>
-        @if (IsAdminView)
+        @* @if (IsAdminView)
         {
             <div class="brief-export-actions no-print">
                 <MudButton Href="@BriefPdfUrl" Target="_blank" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
@@ -40,6 +40,34 @@
                 </MudButton>
             </div>
         }
+
+        @if (IsValidatorView)
+        {
+            <div class="brief-export-actions no-print">
+                <MudButton Href="@BriefPdfUrl" Target="_blank" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
+                    @T("Brief.PrintPdf")
+                </MudButton>
+
+            </div>
+        } *@
+
+        @if (IsValidatorOrAdmin)
+        {
+            <div class="brief-export-actions no-print">
+                <MudButton Href="@BriefPdfUrl" Target="_blank" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
+                    @T("Brief.PrintPdf")
+                </MudButton>
+
+                @* JSON export — Admin only *@
+                @if (IsAdminView)
+                {
+                    <MudButton Href="@BriefJsonUrl" Target="_blank" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.DataObject" Disabled="@(_isLoading || _result is null)">
+                        @T("Brief.ExportJson")
+                    </MudButton>
+                }
+            </div>
+        }
+
     </section>
 
     @if (!_isRestricted)
@@ -103,64 +131,33 @@
             </span>
         </section>
 
+        @* 2. Admin Only Section: Extra diagnostics (the remaining 2 badges + details) *@
         @if (IsAdminView)
         {
-            <section class="brief-summary-row admin-only-panel">
-            <div class="brief-status-card">
-                <div>
-                    <span>@T("Common.Status")</span>
-                    <MudChip T="string" Size="Size.Small" Color="@StatusColor(_report?.Status ?? ReportStatus.Submitted)" Variant="Variant.Filled">
-                        @Text.Status(_report?.LanguageCode ?? "en", _report?.Status ?? ReportStatus.Submitted)
-                    </MudChip>
+            <section class="admin-only-panel">
+                <div class="brief-status-card">
+                    @* We only show the 2 unique admin badges here since the other 3 are above *@
+                    <div>
+                        <span>@T("Pipeline.Confidence")</span>
+                        <MudChip T="string">@_result.Confidence.ToString("0.00")</MudChip>
+                    </div>
+                    <div>
+                        <span>@T("Pipeline.Mode")</span>
+                        <MudChip T="string" Color="@PipelineModeColor">@LocalizedPipelineMode</MudChip>
+                    </div>
                 </div>
-                <div>
-                    <span>@T("Common.IssueType")</span>
-                    <MudChip T="string" Size="Size.Small" Class="brief-chip issue-chip" Variant="Variant.Filled">
-                        @Text.IssueType(_report?.LanguageCode ?? "en", _result.IssueType)
-                    </MudChip>
-                </div>
-                <div>
-                    <span>@T("Common.Urgency")</span>
-                    <MudChip T="string" Size="Size.Small" Color="@UrgencyColor(_result.Urgency)" Variant="Variant.Filled">
-                        @Text.Urgency(_report?.LanguageCode ?? "en", _result.Urgency)
-                    </MudChip>
-                </div>
-                <div>
-                    <span>@T("Pipeline.Confidence")</span>
-                    <MudChip T="string" Size="Size.Small" Class="brief-chip confidence-chip" Variant="Variant.Filled">
-                        @_result.Confidence.ToString("0.00")
-                    </MudChip>
-                </div>
-                <div>
-                    <span>@T("Brief.ValidationGate")</span>
-                    <MudChip T="string" Size="Size.Small" Color="@(IsValidationBacked ? Color.Success : Color.Warning)" Variant="Variant.Filled">
-                        @(IsValidationBacked ? T("Brief.Complete") : T("Brief.Draft"))
-                    </MudChip>
-                </div>
-                <div>
-                    <span>@T("Pipeline.Mode")</span>
-                    <MudChip T="string" Size="Size.Small" Color="@PipelineModeColor" Variant="Variant.Filled">
-                        @LocalizedPipelineMode
-                    </MudChip>
-                </div>
-            </div>
 
-            <div class="brief-panel validation-gate-panel">
-                <div>
-                    <p class="eyebrow">@T("Brief.HumanValidationGate")</p>
+                @* Human Validation Gate - Admin Only *@
+                <div class="brief-panel validation-gate-panel">
                     <h2>@(IsValidationBacked ? T("Brief.ReadyTitle") : T("Brief.NotReadyTitle"))</h2>
-                    <p>@ValidationGateText</p>
+                    <div class="validation-gate-checks">
+                        @foreach (var check in ValidationGateChecks)
+                        {
+                            <MudChip T="string" Color="@(check.Done ? Color.Success : Color.Default)">@check.Label</MudChip>
+                        }
+                    </div>
                 </div>
-                <div class="validation-gate-checks">
-                    @foreach (var check in ValidationGateChecks)
-                    {
-                        <MudChip T="string" Size="Size.Small" Color="@(check.Done ? Color.Success : Color.Default)" Variant="Variant.Filled" Icon="@(check.Done ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)">
-                            @check.Label
-                        </MudChip>
-                    }
-                </div>
-            </div>
-        </section>
+            </section>
         }
 
         <section class="brief-stack">
@@ -220,9 +217,16 @@
     private bool _isRestricted = true;
     private string _language = "en";
 
-    private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId, IsAdminView);
-    private string BriefPdfUrl => ApiClient.GetBriefPdfUrl(ReportId, IsAdminView);
+    // private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId, IsAdminView);
+    // private string BriefPdfUrl => ApiClient.GetBriefPdfUrl(ReportId, IsAdminView);
+
+    private string BriefAudience => Roles.IsAdmin ? "admin" : "validator";
+    private string BriefPdfUrl => ApiClient.GetBriefPdfUrl(ReportId, BriefAudience);
+    private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId, BriefAudience);
+
     private bool IsAdminView => Roles.IsAdmin;
+    private bool IsValidatorView => Roles.IsValidator;
+    private bool IsValidatorOrAdmin => Roles.IsAdmin || Roles.IsValidator;
 
     private bool IsValidationBacked =>
         _report?.Status == ReportStatus.Approved &&
@@ -296,7 +300,7 @@
                 return;
             }
 
-            _isRestricted = !Roles.IsAdmin;
+            _isRestricted = !Roles.IsAdmin && !Roles.IsValidator;
             if (_isRestricted)
             {
                 return;

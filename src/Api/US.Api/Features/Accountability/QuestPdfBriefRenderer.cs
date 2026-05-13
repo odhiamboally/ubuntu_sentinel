@@ -10,6 +10,7 @@ namespace US.Api.Features.Accountability;
 public enum BriefAudience
 {
     Admin,
+    Validator,
     Restricted
 }
 
@@ -31,7 +32,8 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
         private readonly bool _isFrench = string.Equals(report.LanguageCode, "fr", StringComparison.OrdinalIgnoreCase);
         private readonly bool _isValidationBacked = report.Status == ReportStatus.Approved && report.ValidationChecks.IsComplete;
         private readonly BriefAudience _audience = audience;
-        private bool IsRestrictedAudience => _audience != BriefAudience.Admin;
+        private bool IsAdminAudience => _audience == BriefAudience.Admin;
+        private bool IsRestrictedAudience => _audience == BriefAudience.Restricted;
 
         public DocumentMetadata GetMetadata() => new()
         {
@@ -64,7 +66,12 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                     column.Item().Element(ComposeSafetyBanner);
                     column.Item().Element(ComposeOverview);
 
-                    if (!string.IsNullOrWhiteSpace(result.FallbackReason))
+                    //if (!string.IsNullOrWhiteSpace(result.FallbackReason))
+                    //{
+                    //    column.Item().Element(ComposeFallbackBanner);
+                    //}
+
+                    if (IsAdminAudience && !string.IsNullOrWhiteSpace(result.FallbackReason))
                     {
                         column.Item().Element(ComposeFallbackBanner);
                     }
@@ -186,12 +193,23 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                     row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Status", "Statut"), FormatStatus(report.Status)));
                     row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Validation gate", "Gate de validation"), GetValidationGateLabel()));
                 });
+                //column.Item().Row(row =>
+                //{
+                //    row.Spacing(8);
+                //    row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Pipeline mode", "Mode du pipeline"), FormatPipelineMode()));
+                //    row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Confidence", "Confiance"), result.Confidence.ToString("0.00", CultureInfo.InvariantCulture)));
+                //});
+
                 column.Item().Row(row =>
                 {
                     row.Spacing(8);
-                    row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Pipeline mode", "Mode du pipeline"), FormatPipelineMode()));
+                    if (IsAdminAudience)
+                    {
+                        row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Pipeline mode", "Mode du pipeline"), FormatPipelineMode()));
+                    }
                     row.RelativeItem().Element(c => ComposeFactCard(c, Localize("Confidence", "Confiance"), result.Confidence.ToString("0.00", CultureInfo.InvariantCulture)));
                 });
+
             });
         }
 
@@ -328,23 +346,45 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                     }
                 });
 
-                column.Item().Text(Localize("Pipeline signals", "Signaux du pipeline"))
-                    .SemiBold()
-                    .FontColor(Palette.Brand);
-                column.Item().Background(Palette.SurfaceStrong).Padding(10).Column(signalColumn =>
+                //column.Item().Text(Localize("Pipeline signals", "Signaux du pipeline"))
+                //    .SemiBold()
+                //    .FontColor(Palette.Brand);
+                //column.Item().Background(Palette.SurfaceStrong).Padding(10).Column(signalColumn =>
+                //{
+                //    signalColumn.Spacing(4);
+                //    signalColumn.Item().Text($"{Localize("Mode", "Mode")}: {FormatPipelineMode()}");
+
+                //    if (!string.IsNullOrWhiteSpace(result.PipelineModel))
+                //    {
+                //        signalColumn.Item().Text($"{Localize("Model", "Modèle")}: {result.PipelineModel}");
+                //    }
+
+                //    signalColumn.Item().Text($"{Localize("Flags", "Drapeaux")}: {FormatList(result.Flags, Localize("None", "Aucun"))}");
+                //    signalColumn.Item().Text($"{Localize("Citations", "Citations")}: {FormatList(result.Citations, Localize("None", "Aucune"))}")
+                //        .LineHeight(1.3f);
+                //});
+
+                if (IsAdminAudience)
                 {
-                    signalColumn.Spacing(4);
-                    signalColumn.Item().Text($"{Localize("Mode", "Mode")}: {FormatPipelineMode()}");
-
-                    if (!string.IsNullOrWhiteSpace(result.PipelineModel))
+                    column.Item().Text(Localize("Pipeline signals", "Signaux du pipeline"))
+                        .SemiBold()
+                        .FontColor(Palette.Brand);
+                    column.Item().Background(Palette.SurfaceStrong).Padding(10).Column(signalColumn =>
                     {
-                        signalColumn.Item().Text($"{Localize("Model", "Modèle")}: {result.PipelineModel}");
-                    }
+                        signalColumn.Spacing(4);
+                        signalColumn.Item().Text($"{Localize("Mode", "Mode")}: {FormatPipelineMode()}");
 
-                    signalColumn.Item().Text($"{Localize("Flags", "Drapeaux")}: {FormatList(result.Flags, Localize("None", "Aucun"))}");
-                    signalColumn.Item().Text($"{Localize("Citations", "Citations")}: {FormatList(result.Citations, Localize("None", "Aucune"))}")
-                        .LineHeight(1.3f);
-                });
+                        if (!string.IsNullOrWhiteSpace(result.PipelineModel))
+                        {
+                            signalColumn.Item().Text($"{Localize("Model", "Modèle")}: {result.PipelineModel}");
+                        }
+
+                        signalColumn.Item().Text($"{Localize("Flags", "Drapeaux")}: {FormatList(result.Flags, Localize("None", "Aucun"))}");
+                        signalColumn.Item().Text($"{Localize("Citations", "Citations")}: {FormatList(result.Citations, Localize("None", "Aucune"))}")
+                            .LineHeight(1.3f);
+                    });
+                }
+
             });
         }
 

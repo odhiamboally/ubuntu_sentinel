@@ -69,16 +69,26 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
             ?? throw new InvalidOperationException("The API returned an empty pipeline response.");
     }
 
-    public string GetBriefJsonUrl(Guid reportId, bool adminAudience = false)
+    //public string GetBriefJsonUrl(Guid reportId, bool adminAudience = false)
+    //{
+    //    var query = adminAudience ? "?audience=admin" : string.Empty;
+    //    return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json{query}").ToString();
+    //}
+
+    //public string GetBriefPdfUrl(Guid reportId, bool adminAudience = false)
+    //{
+    //    var query = adminAudience ? "?audience=admin" : string.Empty;
+    //    return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.pdf{query}").ToString();
+    //}
+
+    public string GetBriefJsonUrl(Guid reportId, string audience = "validator")
     {
-        var query = adminAudience ? "?audience=admin" : string.Empty;
-        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json{query}").ToString();
+        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json?audience={audience}").ToString();
     }
 
-    public string GetBriefPdfUrl(Guid reportId, bool adminAudience = false)
+    public string GetBriefPdfUrl(Guid reportId, string audience = "validator")
     {
-        var query = adminAudience ? "?audience=admin" : string.Empty;
-        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.pdf{query}").ToString();
+        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.pdf?audience={audience}").ToString();
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
