@@ -115,14 +115,7 @@ public static class AccountabilityEndpoints
             }
 
             var audience = ResolveAudience(httpContext);
-            var result = audience == BriefAudience.Admin
-                ? await pipeline.AnalyzeAsync(report, cancellationToken)
-                : new ReportPipelineResultDto
-                {
-                    ReportId = report.Id,
-                    IssueType = report.IssueType,
-                    Urgency = report.Urgency
-                };
+            var result = await pipeline.AnalyzeAsync(report, cancellationToken);
             var pdf = pdfRenderer.Render(report, result, audience);
 
             return Results.File(

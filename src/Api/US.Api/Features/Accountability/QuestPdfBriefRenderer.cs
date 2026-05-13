@@ -47,7 +47,7 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(22);
+                page.Margin(26);
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(text => text.FontSize(10).FontColor(Palette.Ink));
 
