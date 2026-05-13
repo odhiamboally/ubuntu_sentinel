@@ -69,6 +69,11 @@ public sealed class OpenAiChatJsonClient(
                 },
                 cancellationToken);
 
+            if (probe.Ok)
+            {
+                logger.LogInformation("OpenAI live probe succeeded for model {Model}.", _options.Model);
+            }
+
             return new OpenAiDiagnosticsDto
             {
                 IsConfigured = true,
