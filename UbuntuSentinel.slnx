@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="nuget.config" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Api/US.Api/US.Api.csproj" Id="208f4524-1b74-4fd0-b3cb-3b9297c2a755" />
     <Project Path="src/Application/US.Application/US.Application.csproj" Id="b0d4f77d-bdb8-44cb-87d3-4fdbdf4827d8" />
