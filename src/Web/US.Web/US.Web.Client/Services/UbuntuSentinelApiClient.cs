@@ -69,14 +69,16 @@ public sealed class UbuntuSentinelApiClient(HttpClient httpClient)
             ?? throw new InvalidOperationException("The API returned an empty pipeline response.");
     }
 
-    public string GetBriefJsonUrl(Guid reportId)
+    public string GetBriefJsonUrl(Guid reportId, bool adminAudience = false)
     {
-        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json").ToString();
+        var query = adminAudience ? "?audience=admin" : string.Empty;
+        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.json{query}").ToString();
     }
 
-    public string GetBriefPdfUrl(Guid reportId)
+    public string GetBriefPdfUrl(Guid reportId, bool adminAudience = false)
     {
-        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.pdf").ToString();
+        var query = adminAudience ? "?audience=admin" : string.Empty;
+        return new Uri(ApiBaseUri, $"/api/reports/{reportId}/brief.pdf{query}").ToString();
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)

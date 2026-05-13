@@ -37,6 +37,18 @@ public static class AccountabilityEndpoints
                 return Results.NotFound();
             }
 
+            var audience = ResolveAudience(httpContext);
+            if (audience != BriefAudience.Admin)
+            {
+                return Results.Json(new
+                {
+                    generatedAt = DateTimeOffset.UtcNow,
+                    exportType = "Ubuntu Sentinel accountability brief",
+                    restricted = true,
+                    message = "Accountability brief exports are available to administrators only."
+                });
+            }
+
             var result = await pipeline.AnalyzeAsync(report, cancellationToken);
             var fileName = $"{BuildBriefFileStem(report)}.json";
 
@@ -90,6 +102,7 @@ public static class AccountabilityEndpoints
 
         endpoints.MapGet("/api/reports/{id:guid}/brief.pdf", async (
             Guid id,
+            HttpContext httpContext,
             IReportStore reportStore,
             IAccountabilityPipeline pipeline,
             IBriefPdfRenderer pdfRenderer,
@@ -101,8 +114,9 @@ public static class AccountabilityEndpoints
                 return Results.NotFound();
             }
 
+            var audience = ResolveAudience(httpContext);
             var result = await pipeline.AnalyzeAsync(report, cancellationToken);
-            var pdf = pdfRenderer.Render(report, result);
+            var pdf = pdfRenderer.Render(report, result, audience);
 
             return Results.File(
                 pdf,
@@ -112,6 +126,14 @@ public static class AccountabilityEndpoints
         .WithTags("Accountability");
 
         return endpoints;
+    }
+
+    private static BriefAudience ResolveAudience(HttpContext httpContext)
+    {
+        var audience = httpContext.Request.Query["audience"].ToString();
+        return string.Equals(audience, "admin", StringComparison.OrdinalIgnoreCase)
+            ? BriefAudience.Admin
+            : BriefAudience.Restricted;
     }
 
     private static string BuildBriefFileStem(ReportDto report)

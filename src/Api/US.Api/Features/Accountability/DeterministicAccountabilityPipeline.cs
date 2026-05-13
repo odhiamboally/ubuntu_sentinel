@@ -161,7 +161,7 @@ public sealed class DeterministicAccountabilityPipeline(IPolicyComparisonService
             La reparation doit restaurer la dignite, la solidarite et le bien-etre collectif, pas seulement regler une transaction.
 
             ---
-            *Genere avec assistance IA. Toute affirmation requiert une validation humaine avant escalation institutionnelle.*
+            *Brief genere. Toute affirmation requiert une validation humaine avant escalation institutionnelle.*
             """;
         }
 
@@ -207,7 +207,7 @@ public sealed class DeterministicAccountabilityPipeline(IPolicyComparisonService
         Repair should restore dignity, solidarity, and collective wellbeing, not only settle a transaction.
 
         ---
-        *Generated with AI assistance. All claims require human validation before institutional escalation.*
+        *Generated brief. All claims require human validation before institutional escalation.*
         """;
     }
 
@@ -249,7 +249,7 @@ public sealed class DeterministicAccountabilityPipeline(IPolicyComparisonService
             Le rejet doit proteger la dignite, la securite et la confiance communautaire, pas fermer la porte a une soumission plus sure et mieux etayee.
 
             ---
-            *Dossier interne genere avec assistance IA. Rapport rejete ; aucune escalation autorisee.*
+            *Dossier interne genere. Rapport rejete ; aucune escalation autorisee.*
             """;
         }
 
@@ -287,7 +287,7 @@ public sealed class DeterministicAccountabilityPipeline(IPolicyComparisonService
         Rejection should protect dignity, safety, and community trust, not close the door to a safer and better-supported submission.
 
         ---
-        *Internal record generated with AI assistance. Report rejected; no escalation authorized.*
+        *Internal record generated. Report rejected; no escalation authorized.*
         """;
     }
 
@@ -327,7 +327,7 @@ public sealed class DeterministicAccountabilityPipeline(IPolicyComparisonService
             3. Revenir a la validation avant toute escalation externe.
 
             ---
-            *Brief de suivi genere avec assistance IA. Non pret pour escalation.*
+            *Brief de suivi genere. Non pret pour escalation.*
             """;
         }
 
@@ -363,7 +363,7 @@ public sealed class DeterministicAccountabilityPipeline(IPolicyComparisonService
         3. Return to validation before any external escalation.
 
         ---
-        *Follow-up brief generated with AI assistance. Not ready for escalation.*
+        *Follow-up brief generated. Not ready for escalation.*
         """;
     }
 
