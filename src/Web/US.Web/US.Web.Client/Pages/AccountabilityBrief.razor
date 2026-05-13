@@ -8,6 +8,7 @@
 @using System.Net
 @inject Services.UbuntuSentinelApiClient ApiClient
 @inject Services.UiTextService Text
+@inject Services.AppLanguageService Language
 @inject Services.AppRoleService Roles
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
@@ -17,7 +18,7 @@
 <main class="page-shell">
     <div class="brief-toolbar no-print">
         <MudButton OnClick="@(() => Navigation.NavigateTo("/reports"))" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ArrowBack">
-            @Text.Text(_report?.LanguageCode ?? "en", "Common.BackToReports")
+            @T("Common.BackToReports")
         </MudButton>
     </div>
 
@@ -27,27 +28,40 @@
             <h1>@BriefTitle</h1>
             <p class="lede">@BriefLede</p>
         </div>
-        <div class="brief-export-actions no-print">
-            <MudButton Href="@BriefPdfUrl" Target="_blank" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
-                @T("Brief.PrintPdf")
-            </MudButton>
+        @if (IsAdminView)
+        {
+            <div class="brief-export-actions no-print">
+                <MudButton Href="@BriefPdfUrl" Target="_blank" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PictureAsPdf" Disabled="@(_isLoading || _result is null)">
+                    @T("Brief.PrintPdf")
+                </MudButton>
 
-            <MudButton Href="@BriefJsonUrl" Target="_blank" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.DataObject" Disabled="@(_isLoading || _result is null)">
-                @T("Brief.ExportJson")
-            </MudButton>
-        </div>
+                <MudButton Href="@BriefJsonUrl" Target="_blank" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.DataObject" Disabled="@(_isLoading || _result is null)">
+                    @T("Brief.ExportJson")
+                </MudButton>
+            </div>
+        }
     </section>
 
-    <section class="safety-note @(IsValidationBacked ? "validated-note" : null)">
-        <strong>@BriefSafetyTitle</strong>
-        @BriefSafetyBody
-    </section>
+    @if (!IsRestrictedView)
+    {
+        <section class="safety-note @(IsValidationBacked ? "validated-note" : null)">
+            <strong>@BriefSafetyTitle</strong>
+            @BriefSafetyBody
+        </section>
+    }
 
     @if (_isLoading)
     {
         <section class="empty-state">
             <h2>@T("Brief.GeneratingTitle")</h2>
             <p>@T("Brief.GeneratingBody")</p>
+        </section>
+    }
+    else if (IsRestrictedView)
+    {
+        <section class="empty-state">
+            <h2>@T("Brief.RestrictedTitle")</h2>
+            <p>@T("Brief.RestrictedBody")</p>
         </section>
     }
     else if (_result is null)
@@ -203,22 +217,29 @@
     private ReportPipelineResultDto? _result;
     private ReportDto? _report;
     private bool _isLoading = true;
+    private bool _isRestricted = true;
+    private string _language = "en";
 
-    private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId);
-    private string BriefPdfUrl => ApiClient.GetBriefPdfUrl(ReportId);
+    private string BriefJsonUrl => ApiClient.GetBriefJsonUrl(ReportId, IsAdminView);
+    private string BriefPdfUrl => ApiClient.GetBriefPdfUrl(ReportId, IsAdminView);
     private bool IsAdminView => Roles.IsAdmin;
+    private bool IsRestrictedView => _isRestricted;
 
     private bool IsValidationBacked =>
         _report?.Status == ReportStatus.Approved &&
         _report.ValidationChecks.IsComplete;
 
-    private string BriefTitle => IsValidationBacked
-        ? T("Brief.ValidatedTitle")
-        : T("Brief.DraftTitle");
+    private string BriefTitle => IsRestrictedView
+        ? T("Brief.RestrictedTitle")
+        : IsValidationBacked
+            ? T("Brief.ValidatedTitle")
+            : T("Brief.DraftTitle");
 
-    private string BriefLede => IsValidationBacked
-        ? T("Brief.ValidatedLede")
-        : T("Brief.DraftLede");
+    private string BriefLede => IsRestrictedView
+        ? T("Brief.RestrictedBody")
+        : IsValidationBacked
+            ? T("Brief.ValidatedLede")
+            : T("Brief.DraftLede");
 
     private string BriefSafetyTitle => IsValidationBacked
         ? T("Brief.ValidatedSafetyTitle")
@@ -268,9 +289,17 @@
         try
         {
             await Roles.InitializeAsync(Js);
+            await Language.InitializeAsync(Js);
+            _language = Language.CurrentLanguage;
             if (Roles.IsReporter)
             {
                 Navigation.NavigateTo("/");
+                return;
+            }
+
+            _isRestricted = !Roles.IsAdmin;
+            if (_isRestricted)
+            {
                 return;
             }
 
@@ -283,7 +312,7 @@
         }
     }
 
-    private string T(string key) => Text.Text(_report?.LanguageCode ?? "en", key);
+    private string T(string key) => Text.Text(_report?.LanguageCode ?? _language, key);
 
     private static Color StatusColor(ReportStatus status) => status switch
     {

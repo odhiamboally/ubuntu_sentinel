@@ -1221,7 +1221,7 @@ h1 {
 
 .brief-stack {
     display: grid;
-    gap: 1rem;
+    gap: .75rem;
 }
 
 .brief-toolbar {
@@ -1229,7 +1229,7 @@ h1 {
     align-items: center;
     justify-content: flex-start;
     gap: .75rem;
-    margin-bottom: .75rem;
+    margin-bottom: .5rem;
 }
 
 .brief-hero {
@@ -1251,7 +1251,7 @@ h1 {
     border: 1px solid #dde5dc;
     border-radius: 8px;
     background: #fff;
-    padding: 1rem;
+    padding: .85rem;
     box-shadow: 0 16px 45px rgba(16, 39, 27, .08);
 }
 
@@ -1287,7 +1287,7 @@ h1 {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: .75rem;
-    margin-bottom: 1rem;
+    margin-bottom: .75rem;
     align-items: stretch;
 }
 
@@ -1298,8 +1298,8 @@ h1 {
     align-items: center;
     border: 1px solid #dde5dc;
     border-radius: 8px;
-    padding: .65rem .75rem;
-    margin-bottom: 1rem;
+    padding: .55rem .65rem;
+    margin-bottom: .75rem;
     background: #fff;
     box-shadow: 0 16px 45px rgba(16, 39, 27, .08);
 }
@@ -1412,12 +1412,12 @@ h1 {
 
 .brief-document {
     display: grid;
-    gap: .35rem;
-    max-height: 760px;
+    gap: .3rem;
+    max-height: 680px;
     overflow: auto;
     border: 1px solid #dfe7df;
     border-radius: 8px;
-    padding: 1rem;
+    padding: .75rem;
     background: #fbfcfa;
 }
 
@@ -1428,7 +1428,7 @@ h1 {
 }
 
 .brief-document h2 {
-    margin: .85rem 0 .2rem;
+    margin: .65rem 0 .2rem;
     color: #314736;
     font-size: .95rem;
     line-height: 1.25;

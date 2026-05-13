@@ -7,23 +7,31 @@ using US.SharedKernel.Enums;
 
 namespace US.Api.Features.Accountability;
 
+public enum BriefAudience
+{
+    Admin,
+    Restricted
+}
+
 public interface IBriefPdfRenderer
 {
-    byte[] Render(ReportDto report, ReportPipelineResultDto result);
+    byte[] Render(ReportDto report, ReportPipelineResultDto result, BriefAudience audience);
 }
 
 public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 {
-    public byte[] Render(ReportDto report, ReportPipelineResultDto result)
+    public byte[] Render(ReportDto report, ReportPipelineResultDto result, BriefAudience audience)
     {
-        return new AccountabilityBriefDocument(report, result).GeneratePdf();
+        return new AccountabilityBriefDocument(report, result, audience).GeneratePdf();
     }
 
-    private sealed class AccountabilityBriefDocument(ReportDto report, ReportPipelineResultDto result) : IDocument
+    private sealed class AccountabilityBriefDocument(ReportDto report, ReportPipelineResultDto result, BriefAudience audience) : IDocument
     {
         private readonly DateTimeOffset _generatedAt = DateTimeOffset.UtcNow;
         private readonly bool _isFrench = string.Equals(report.LanguageCode, "fr", StringComparison.OrdinalIgnoreCase);
         private readonly bool _isValidationBacked = report.Status == ReportStatus.Approved && report.ValidationChecks.IsComplete;
+        private readonly BriefAudience _audience = audience;
+        private bool IsRestricted => _audience != BriefAudience.Admin;
 
         public DocumentMetadata GetMetadata() => new()
         {
@@ -39,14 +47,20 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(28);
+                page.Margin(22);
                 page.PageColor(Colors.White);
                 page.DefaultTextStyle(text => text.FontSize(10).FontColor(Palette.Ink));
 
                 page.Header().Element(ComposeHeader);
                 page.Content().PaddingTop(16).Column(column =>
                 {
-                    column.Spacing(14);
+                    column.Spacing(10);
+                    if (IsRestricted)
+                    {
+                        column.Item().Element(ComposeRestrictedNotice);
+                        return;
+                    }
+
                     column.Item().Element(ComposeSafetyBanner);
                     column.Item().Element(ComposeOverview);
 
@@ -126,6 +140,26 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
                                 "This PDF is structured assistance only. It does not authorize escalation until a validator completes every required check.",
                                 "Ce PDF reste une assistance structurée. Il n'autorise aucune escalade tant qu'un validateur n'a pas complété tous les contrôles requis."))
                         .LineHeight(1.35f);
+                });
+        }
+
+        private void ComposeRestrictedNotice(IContainer container)
+        {
+            container.Border(1)
+                .BorderColor(Palette.Border)
+                .Background(Palette.Surface)
+                .Padding(14)
+                .Column(column =>
+                {
+                    column.Spacing(6);
+                    column.Item().Text(Localize("Administrator access required", "Accès administrateur requis"))
+                        .FontSize(14)
+                        .SemiBold()
+                        .FontColor(Palette.Brand);
+                    column.Item().Text(Localize(
+                            "This accountability brief is available to administrators only.",
+                            "Ce brief de responsabilité est réservé aux administrateurs."))
+                        .LineHeight(1.3f);
                 });
         }
 
@@ -395,6 +429,11 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
         private string GetHeaderBadgeLabel()
         {
+            if (IsRestricted)
+            {
+                return Localize("Admin-only", "Réservé admin");
+            }
+
             if (report.Status == ReportStatus.Rejected)
             {
                 return Localize("Internal rejection", "Rejet interne");
@@ -412,6 +451,11 @@ public sealed class QuestPdfBriefRenderer : IBriefPdfRenderer
 
         private string GetHeaderBadgeBackground()
         {
+            if (IsRestricted)
+            {
+                return Palette.Warning;
+            }
+
             if (report.Status == ReportStatus.Rejected)
             {
                 return Palette.Danger;
