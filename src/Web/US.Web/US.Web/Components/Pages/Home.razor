@@ -16,11 +16,11 @@
         </p>
 
         <div class="landing-actions" aria-label="Choose language">
-            <button type="button" onclick="setUbuntuLanguage('en')">
+            <button type="button" onclick="ubuntuSentinelSetLanguage('en', '/submit')">
                 <span>English</span>
                 <strong>Get started</strong>
             </button>
-            <button type="button" onclick="setUbuntuLanguage('fr')">
+            <button type="button" onclick="ubuntuSentinelSetLanguage('fr', '/submit')">
                 <span>Francais</span>
                 <strong>Commencer</strong>
             </button>
@@ -46,10 +46,3 @@
         </article>
     </section>
 </main>
-
-<script>
-    function setUbuntuLanguage(language) {
-        localStorage.setItem('ubuntu-sentinel-language', language);
-        window.location.href = '/submit';
-    }
-</script>

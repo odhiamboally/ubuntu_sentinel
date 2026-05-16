@@ -29,12 +29,6 @@
         </div>
     </section>
 
-    <section class="list-command-bar">
-        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => Navigation.NavigateTo("/submit"))">
-            @T("Reports.CreateNew")
-        </MudButton>
-    </section>
-
     <section class="table-surface">
         @if (_reports.Count == 0)
         {

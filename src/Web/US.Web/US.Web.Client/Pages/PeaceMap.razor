@@ -4,11 +4,12 @@
 @implements IAsyncDisposable
 @using US.SharedKernel.Contracts.Reports
 @using US.SharedKernel.Enums
+@using US.Web.Client.Services
 @inject IJSRuntime JsRuntime
-@inject Services.UbuntuSentinelApiClient ApiClient
-@inject Services.AppLanguageService Language
-@inject Services.AppRoleService Roles
-@inject Services.UiTextService Text
+@inject UbuntuSentinelApiClient ApiClient
+@inject AppLanguageService Language
+@inject AppRoleService Roles
+@inject UiTextService Text
 @inject NavigationManager Navigation
 
 <PageTitle>@T("Map.Title") | Ubuntu Sentinel</PageTitle>

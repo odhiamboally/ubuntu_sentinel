@@ -20,8 +20,13 @@
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        window.ubuntuSentinelSetLanguage = function (language) {
+        window.ubuntuSentinelSetLanguage = function (language, targetUrl) {
             localStorage.setItem('ubuntu-sentinel-language', language === 'fr' ? 'fr' : 'en');
+            if (targetUrl) {
+                window.location.href = targetUrl;
+                return;
+            }
+
             window.location.reload();
         };
 
